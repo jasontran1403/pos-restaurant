@@ -249,7 +249,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   return (
     <div className="animation-fadeIn relative">
       {/* Cart Button with Glassmorphism and Badge Overlay */}
-      <motion.div
+      {/* <motion.div
         className="fixed top-52 right-4 z-10"
         animate={cartControls}
       >
@@ -279,7 +279,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
             {cart.reduce((sum, item) => sum + item.qty, 0)}
           </motion.span>
         </button>
-      </motion.div>
+      </motion.div> */}
 
       {!loading && (
         <div className="flex flex-col gap-4 w-[95svw] mx-auto pb-[50px]">
@@ -325,7 +325,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                   <motion.div
                     key={item.id}
                     onClick={() => handleAdd(item)}
-                    className={`cursor-pointer ${focusedItem === item.id ? '' : ''}`}
+                    className={`cursor-pointer relative ${focusedItem === item.id ? '' : ''}`}
                     animate={focusedItem === item.id ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
                   >
                     <img
@@ -344,6 +344,17 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                       <p className="text-center text-green-400 text-[12px]">
                         {formatCurrency(item.price)}
                       </p>
+                    )}
+                    {cartQtyMap[item.id] > 0 && (
+                      <motion.span
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {cartQtyMap[item.id]}
+                      </motion.span>
                     )}
                   </motion.div>
                 ))}
