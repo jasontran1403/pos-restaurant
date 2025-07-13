@@ -2294,10 +2294,10 @@ select {
 }
 
 .Toastify__toast-container {
-  position: absolute;
+  position: fixed;
   top: 1%;
   left: 50%;
-  transform: translate(-46.5%, -1%);
+  transform: translateX(-50%); /* Simplified centering */
   width: 90svw;
   min-height: 100px;
   z-index: 999999;
