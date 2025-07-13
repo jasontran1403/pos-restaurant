@@ -1,0 +1,134 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+}
+  
+body {
+  padding: 0;
+  margin: 0;
+  --tw-bg-opacity: 0.8;
+  background-color: rgb(0 4 15 / var(--tw-bg-opacity));
+}
+
+/* New responsive class */
+/* Add this to your coming.css file */
+
+#notfound {
+  width: 100%;
+  text-align: center;
+  display: flex; /* Enable flexbox */
+  flex-direction: column; /* Align items in a column */
+  justify-content: space-between; /* Space between the children */
+}
+
+/* Other existing styles remain unchanged */
+
+  
+#notfound .notfound-responsive {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+}
+
+.notfound-responsive {
+  width: 100%;
+  text-align: center;
+}
+
+.notfound-responsive .notfound-404 {
+  height: 280px;
+  position: relative;
+  z-index: -1;
+}
+
+.remove {
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%)
+}
+  
+.notfound-responsive .notfound-404 h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 120px;
+  margin: 0px;
+  font-weight: 900;
+  position: absolute;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+      -ms-transform: translateX(-50%);
+          transform: translateX(-50%);
+  background: url(../404assets/bg.jpg) no-repeat;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: cover;
+  background-position: center;
+}
+  
+.notfound-responsive h2 {
+  font-family: 'Montserrat', sans-serif;
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-top: 0;
+}
+  
+.notfound-responsive p {
+  font-family: 'Montserrat', sans-serif;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  margin-top: 0px;
+}
+  
+.notfound-responsive a {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  text-decoration: none;
+  text-transform: uppercase;
+  background: #0046d5;
+  display: inline-block;
+  padding: 15px 30px;
+  border-radius: 40px;
+  color: #fff;
+  font-weight: 700;
+  -webkit-box-shadow: 0px 4px 15px -5px #0046d5;
+          box-shadow: 0px 4px 15px -5px #0046d5;
+}
+  
+@media only screen and (max-width: 767px) {
+  .notfound-responsive .notfound-404 {
+    height: 142px;
+  }
+  .remove {
+    position: absolute;
+    bottom: -200%;
+  }
+  .notfound-responsive .notfound-404 h1 {
+    font-size: 112px;
+  }
+
+  /* Additional responsiveness for the new class */
+  .notfound-responsive h2 {
+    font-size: 20px; /* Adjust for smaller screens */
+  }
+
+  .notfound-responsive p {
+    font-size: 12px; /* Adjust for smaller screens */
+  }
+
+  .notfound-responsive a {
+    padding: 10px 20px; /* Smaller padding for buttons on smaller screens */
+    font-size: 12px; /* Adjust font size for smaller screens */
+  }
+}

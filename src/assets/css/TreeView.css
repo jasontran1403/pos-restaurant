@@ -1,0 +1,169 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.tree-container {
+  background: rgba(56, 128, 154, 0.47);
+  color: white;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  height: 50svh; /* Giữ nguyên chiều cao */
+  width: 95svw; /* Giữ nguyên chiều rộng */
+  max-width: 100%; /* Đảm bảo không vượt quá màn hình */
+  overflow: auto; /* Cho phép cuộn khi nội dung lớn hơn */
+  margin: 0 auto;
+  padding-bottom: 50px;
+  padding: 20px;
+  margin-top: 20px;
+  animation: fadeIn 1s ease-in-out forwards;
+  display: flex;
+}
+
+.tree {
+  width: 1400px; /* Lớn hơn container */
+  height: 800px; /* Lớn hơn container */
+  flex-shrink: 0; /* Đảm bảo không bị thu nhỏ */
+}
+
+
+.tree ul {
+  padding-top: 20px;
+  position: relative;
+  margin: 0 auto;
+  transition: all 0.5s;
+}
+
+.tree li {
+  float: left;
+  text-align: center;
+  list-style-type: none;
+  position: relative;
+  padding: 20px 5px 0 5px;
+  transition: all 0.5s;
+}
+
+/* Connectors */
+.tree li::before, .tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  border-top: 1px solid #ccc;
+  width: 50%;
+  height: 20px;
+}
+
+.tree li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid #ccc;
+}
+
+/* Remove connectors for only children and adjust spacing */
+.tree li:only-child::after, .tree li:only-child::before {
+  display: none;
+}
+
+.tree li:only-child {
+  padding-top: 0;
+}
+
+.tree li:first-child::before, .tree li:last-child::after {
+  border: 0 none;
+}
+
+.tree li:last-child::before {
+  border-right: 1px solid #ccc;
+  border-radius: 0 5px 0 0;
+}
+
+.tree li:first-child::after {
+  border-radius: 5px 0 0 0;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.1); /* Slightly transparent background */
+  backdrop-filter: blur(10px); /* Glass morph effect */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
+  cursor: pointer; /* Change cursor to pointer on hover */
+}
+
+/* Glass morph effect on hover */
+.glass:hover {
+  background: rgba(255, 255, 255, 0.5); /* More visible on hover */
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2); /* Shadow effect */
+}
+
+.tree ul ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  border-left: 1px solid #ccc;
+  width: 0;
+  height: 20px;
+}
+
+.sponsor {
+  font-size: 12px;
+  font-style: italic;
+  color: lightcyan;
+}
+
+.tree li a {
+  border: 1px solid #ccc;
+  min-width: 150px;
+  height: auto;
+  padding-bottom: 15px;
+  padding-top: 15px;;
+  text-decoration: none;
+  color: #fc3535;
+  font-weight: bold;
+  font-family: arial, verdana, tahoma;
+  font-size: 15px;
+  display: inline-block;
+  transition: all 0.5s;
+  cursor: pointer;
+}
+
+ul li a {
+  /* padding-top: 10px; */
+  /* padding-bottom: 10px; */
+  cursor: pointer;
+}
+.glass-button {
+  background: rgba(255, 255, 255, 0.1); /* Light background with transparency */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Light border */
+  border-radius: 10px; /* Rounded corners */
+  color: lightblue; /* Text color */
+  padding: 10px 20px; /* Padding for the button */
+  font-size: 16px; /* Font size */
+  cursor: pointer; /* Pointer on hover */
+  backdrop-filter: blur(10px); /* Blur effect for glass morphism */
+  transition: all 0.3s ease; /* Smooth transition */
+  margin-top: 0%; /* Margin at the top */
+  margin-left: 0%; /* Margin on the left */
+  position: absolute;
+  z-index: 9999;
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.3); /* Change background on hover */
+  border: 1px solid rgba(255, 255, 255, 0.6); /* Darker border on hover */
+  color: white; /* Change text color on hover */
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}

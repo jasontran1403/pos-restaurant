@@ -1,0 +1,52 @@
+function notify_telegram_new_order($order_id) {
+    if (!$order_id) return;
+
+    $already_sent = get_post_meta($order_id, '_telegram_notified', true);
+    if ($already_sent) {
+        return;
+    }
+
+    date_default_timezone_set('Asia/Ho_Chi_Minh');
+
+    $order = wc_get_order($order_id);
+    $order_date = wp_date('d/m/Y H:i', strtotime($order->get_date_created()), new DateTimeZone('Asia/Ho_Chi_Minh'));
+    $formatted_total = number_format($order->get_total(), 0, ',', '.') . " " . get_woocommerce_currency();
+
+    $billing_first_name = $order->get_billing_first_name();
+    $billing_last_name = $order->get_billing_last_name();
+    $billing_phone = $order->get_billing_phone();
+    $billing_email = $order->get_billing_email();
+	
+    $shipping = $order->get_address('shipping');
+
+	$address_1 = isset($shipping['address_1']) ? $shipping['address_1'] : 'Không có';
+    $address_2 = isset($shipping['address_2']) ? $shipping['address_2'] : 'Không có';
+    $city = isset($shipping['city']) ? $shipping['city'] : 'Không có';
+    $state = isset($shipping['state']) ? $shipping['state'] : 'Không có';
+	
+
+    $message = "Có đơn đặt hàng mới từ GreenFingerVietnam\n";
+    $message .= "📌  Mã đơn hàng: #{$order->get_id()}\n";
+    $message .= "🙍‍♂️  Khách hàng: {$billing_first_name} {$billing_last_name}\n";
+    $message .= "✉️  Email: {$billing_email}\n";
+    $message .= "📞  Số điện thoại: {$billing_phone}\n";
+    $message .= "🏡  Địa chỉ:\n";
+    $message .= "  - Số nhà/Tên đường: {$address_1}\n";
+    $message .= "  - Phường/ Xã: {$address_2}\n";
+    $message .= "  - Quận/Huyện: {$city}\n";
+    $message .= "  - Tỉnh/Thành Phố: {$state}\n";
+
+    $message .= "🛍  Sản phẩm: \n";
+    foreach ($order->get_items() as $item) {
+        $product_name = $item->get_name();
+        $quantity = $item->get_quantity();
+        $message .= "{$product_name} - Số lượng: {$quantity}\n";
+    }
+
+    $message .= "🏧  Phương thức thanh toán: " . $order->get_payment_method_title() . "\n";
+    $message .= "💰  Tổng tiền: {$formatted_total}";
+
+    send_telegram_message($message);
+
+    update_post_meta($order_id, '_telegram_notified', true);
+}
