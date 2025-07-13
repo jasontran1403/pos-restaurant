@@ -6,13 +6,11 @@ import Swal from "sweetalert2/dist/sweetalert2.js";
 import "sweetalert2/src/sweetalert2.scss";
 import { motion, useAnimation } from "framer-motion";
 import { toast } from "react-toastify";
-import { useMediaQuery } from "react-responsive"; // Thêm hook này
-import bestSeller from "../../assets/icons/best-seller.png"; // Giả sử bạn có hình ảnh này
-import newMenu from "../../assets/icons/new-menu.png"; // Giả sử bạn có hình ảnh này
+import { useMediaQuery } from "react-responsive";
 
 const Dashboard = ({ tradingItemView, enableShift }) => {
   const controls = useAnimation();
-  const isMobile = useMediaQuery({ maxWidth: 768 }); // Thêm kiểm tra mobile
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   /* ------------------ STATE ------------------ */
   const { accessToken } = useAccessToken();
@@ -21,13 +19,12 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focusedItem, setFocusedItem] = useState(null);
+  const cartControls = useAnimation(); // For cart shake animation
 
   /* ----- swipe ----- */
   const sliderRef = useRef(null);
   const [dragLimit, setDragLimit] = useState(0);
-
-  /* ----- popup ----- */
-  const [activeItem, setActiveItem] = useState(null);
 
   useEffect(() => {
     const orderId = localStorage.getItem("orderId");
@@ -51,21 +48,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
           showConfirmButton: false,
         });
       });
-
   }, [localStorage.getItem("orderId")]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!activeItem) return;
-      const card = document.getElementById(`card-${activeItem}`);
-      if (card && !card.contains(e.target)) {
-        setActiveItem(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [activeItem]);
 
   const formatCurrency = (value) =>
     value.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
@@ -90,27 +73,21 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     [menu, search]
   );
 
-  // Cập nhật drag limit và reset position khi filteredMenu thay đổi
   useEffect(() => {
     const updateSlider = () => {
       if (!sliderRef.current) return;
 
-      // Tính toán lại drag limit
       const newLimit = sliderRef.current.scrollWidth - sliderRef.current.offsetWidth;
       setDragLimit(Math.max(0, newLimit));
 
-      // Reset vị trí slider với animation
       controls.start({ x: 0 }, { type: "spring", stiffness: 500, damping: 30 });
     };
 
-    // Sử dụng setTimeout để đảm bảo DOM đã cập nhật
     const timer = setTimeout(updateSlider, 50);
     return () => clearTimeout(timer);
   }, [filteredMenu, controls]);
 
-  // Reset khi search thay đổi
   useEffect(() => {
-    setActiveItem(null);
     controls.start({ x: 0 }, { type: "spring", stiffness: 500, damping: 30 });
   }, [search, controls]);
 
@@ -164,7 +141,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       });
   };
 
-  /* ---------- Gọi cho từng nút ---------- */
   const handleBank = () =>
     submitBill("bank", "Tạo đơn hàng thành công, thanh toán Chuyển Khoản!");
 
@@ -173,7 +149,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
 
   const handleSave = () =>
     submitBill("pending", "Lưu đơn hàng thành công!");
-
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
@@ -189,26 +164,27 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   ];
 
   /* ------------------ CART ACTIONS ------------------ */
-  const handleAdd = (item, qty) => {
+  const handleAdd = (item) => {
     if (!enableShift) {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi thêm sản phẩm.");
       return;
     }
 
-    qty = Number(qty || 1);
-    if (!qty || qty <= 0) return toast.error("Nhập số hợp lệ");
-
     setCart((prev) => {
       const idx = prev.findIndex((c) => c.id === item.id);
       if (idx > -1) {
         const updated = [...prev];
-        updated[idx].qty += qty;
+        updated[idx].qty += 1;
         return updated;
       }
-      return [...prev, { ...item, qty }];
+      return [...prev, { ...item, qty: 1 }];
     });
-    setQuantities((q) => ({ ...q, [item.id]: "" }));
-    setActiveItem(null);
+    setFocusedItem(item.id);
+    setTimeout(() => setFocusedItem(null), 1000); // Hide focus border after 1s
+    cartControls.start({
+      x: [0, -5, 5, -5, 0],
+      transition: { duration: 0.3 },
+    }); // Shake animation
   };
 
   const handleIncrease = (itemId) => {
@@ -247,7 +223,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     return Math.ceil(price / 1000) * 1000;
   };
 
-  // Tính giá sau giảm (đã làm tròn)
   const getDiscountedPrice = (item) => {
     if (item.type > 0) {
       const discountAmount = item.price * (item.type / 100);
@@ -266,9 +241,46 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     setCart((prev) => prev.filter((c) => c.id !== itemId));
   };
 
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  };
+
   /* ------------------ RENDER ------------------ */
   return (
-    <div className="animation-fadeIn">
+    <div className="animation-fadeIn relative">
+      {/* Cart Button with Glassmorphism and Badge Overlay */}
+      <motion.div
+        className="fixed top-52 right-4 z-10"
+        animate={cartControls}
+      >
+        <button
+          onClick={scrollToBottom}
+          className="bg-white/10 backdrop-blur-md text-white rounded-full flex items-center gap-2 p-2 relative"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+          <motion.span
+            className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center absolute -top-1 -right-1"
+            animate={{ y: [0, -5, 0], transition: { duration: 0.3 } }}
+            onAnimationComplete={() => cartControls.set({ x: 0 })}
+          >
+            {cart.reduce((sum, item) => sum + item.qty, 0)}
+          </motion.span>
+        </button>
+      </motion.div>
+
       {!loading && (
         <div className="flex flex-col gap-4 w-[95svw] mx-auto pb-[50px]">
           {/* search */}
@@ -301,108 +313,152 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
             }}
           >
             <motion.div
-              className={`${isMobile ? 'flex flex-col gap-3' : 'flex gap-4'}`}
+              className="flex flex-col gap-4"
               drag={!isMobile ? "x" : false}
               dragConstraints={!isMobile ? { left: -dragLimit, right: 0 } : undefined}
               dragElastic={!isMobile ? 0.05 : undefined}
               animate={controls}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              {filteredMenu.map((item) => {
-                const inCart = cartQtyMap[item.id] ?? 0;
-                const remain = item.stocks - inCart;
-                const isActive = activeItem === item.id;
-                const discountPrice = item.type > 0
-                  ? Math.ceil(item.price * (100 - item.type) / 100 / 1000) * 1000
-                  : item.price;
-
-                return (
+              {/* Hotdogs */}
+              <motion.div
+                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
+              >
+                <div className="w-1/3">
+                  <img
+                    src="../icons/hotdog.png"
+                    alt="Hotdogs"
+                    className="w-full h-30 rounded-lg object-cover"
+                  />
+                </div>
+                <div className="w-2/3 flex flex-col gap-2">
                   <motion.div
-                    id={`card-${item.id}`}
-                    key={item.id}
-                    onClick={() => setActiveItem(isActive ? null : item.id)}
-                    className={`relative w-full flex items-center gap-3 p-3 bg-white/5 backdrop-blur-md rounded-xl transition-all ${isActive ? "ring-2 ring-green-500" : ""
-                      }`}
+                    onClick={() => handleAdd({ id: 1, name: "German Hotdogs", price: 25000, image: "", category: "Hotdogs" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 1 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 1 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
                   >
-                    {/* Cột 1: Hình ảnh */}
-                    <div className="relative">
-                      <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
-
-                      {/* Badge giảm giá hình tròn */}
-                      {item.type > 0 && (
-                        <div className="absolute -top-2 -right-2 z-10">
-                          <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
-                            <span className="text-xs font-bold text-white">-{item.type}%</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Cột 2: Thông tin sản phẩm */}
                     <div className="flex-1">
-                      <p className="text-lg font-semibold">{item.name}</p>
-
-                      <div className="flex items-center gap-2">
-                        {item.type > 0 ? (
-                          <>
-                            <p className="text-gray-400 line-through text-sm">
-                              {formatCurrency(item.price)}
-                            </p>
-                            <p className="text-green-400 font-medium">
-                              {formatCurrency(discountPrice)}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-green-400 font-medium">
-                            {formatCurrency(item.price)}
-                          </p>
-                        )}
-                      </div>
+                      <p className="text-lg font-semibold">German Hotdogs</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(25000)}</p>
                     </div>
-
-                    {/* Cột 3: Badge hình ảnh New/Best Seller */}
-                    <div className="flex flex-col items-end">
-                      {item.bestSeller && (
-                        <img
-                          src={bestSeller}
-                          alt="Best Seller"
-                          className="w-16 h-16 object-contain"
-                        />
-                      )}
-                      {!item.bestSeller && item.new && (
-                        <img
-                          src={newMenu}
-                          alt="New"
-                          className="w-16 h-16 object-contain"
-                        />
-                      )}
-                    </div>
-
-                    {isActive && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute inset-0 bg-black/60 flex flex-col justify-center items-center p-4 rounded-xl z-10"
-                      >
-                        <input
-                          type="number"
-                          min={1}
-                          max={remain}
-                          value={quantities[item.id] || ""}
-                          onChange={(e) => setQuantities({ ...quantities, [item.id]: e.target.value })}
-                          placeholder="SL"
-                          className="w-20 mb-2 px-2 py-1 text-center rounded bg-white/10 text-white border border-white/20 focus:outline-none"
-                        />
-                        <button
-                          onClick={() => handleAdd(item, quantities[item.id] || 1)}
-                          className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-white text-sm"
-                        >
-                          Xác nhận
-                        </button>
-                      </div>
-                    )}
                   </motion.div>
-                );
-              })}
+                  <motion.div
+                    onClick={() => handleAdd({ id: 2, name: "Mozzarella Hotdogs", price: 35000, image: "", category: "Hotdogs" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 2 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 2 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                  >
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">Mozzarella Hotdogs</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(35000)}</p>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* Hamburgers */}
+              <motion.div
+                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
+              >
+                <div className="w-2/3 flex flex-col gap-2">
+                  <motion.div
+                    onClick={() => handleAdd({ id: 3, name: "Hamburger", price: 45000, image: "", category: "Hamburgers" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 3 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 3 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                  >
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">Hamburger</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    onClick={() => handleAdd({ id: 4, name: "Double Cheese Burger", price: 60000, image: "", category: "Hamburgers" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 4 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 4 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                  >
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">Double Cheese Burger</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(60000)}</p>
+                    </div>
+                  </motion.div>
+                </div>
+                <div className="w-1/3">
+                  <img
+                    src="../icons/hamber.png"
+                    alt="Hamburgers"
+                    className="w-full h-30 rounded-lg object-cover"
+                  />
+                </div>
+              </motion.div>
+
+              {/* Sausages */}
+              <motion.div
+                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
+              >
+                <div className="w-1/3">
+                  <img
+                    src="../icons/sausage.png"
+                    alt="Sausages"
+                    className="w-full h-30 rounded-lg object-cover"
+                  />
+                </div>
+                <div className="w-2/3 flex flex-col gap-2">
+                  <motion.div
+                    onClick={() => handleAdd({ id: 5, name: "Garlic Sausage", price: 45000, image: "", category: "Sausages" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 5 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 5 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                  >
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">Garlic Sausage</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    onClick={() => handleAdd({ id: 6, name: "Cheddar Sausage", price: 45000, image: "", category: "Sausages" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 6 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 6 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                  >
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">Cheddar Sausage</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
+                    </div>
+                  </motion.div>
+                  <motion.div
+                    onClick={() => handleAdd({ id: 7, name: "Curry Wurst", price: 45000, image: "", category: "Sausages" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 7 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 7 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                  >
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">Curry Wurst</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* Pasta */}
+              <motion.div
+                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
+              >
+                <div className="w-2/3 flex flex-col gap-2">
+                  <motion.div
+                    onClick={() => handleAdd({ id: 8, name: "Italian Lasagna", price: 99000, image: "", category: "Pasta" })}
+                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 8 ? 'ring-2 ring-green-500' : ''}`}
+                    animate={focusedItem === 8 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                  >
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold">Italian Lasagna</p>
+                      <p className="text-green-400 font-medium">{formatCurrency(99000)}</p>
+                    </div>
+                  </motion.div>
+                </div>
+                <div className="w-1/3">
+                  <img
+                    src="../icons/lasanag.png"
+                    alt="Pasta"
+                    className="w-full h-30 rounded-lg object-cover"
+                  />
+                </div>
+              </motion.div>
             </motion.div>
           </motion.div>
 
@@ -467,12 +523,10 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                         ].map(([label, val, bold]) => (
                           <div
                             key={label}
-                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""
-                              }`}
+                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""}`}
                           >
                             <span className="flex-1 min-w-0 truncate pr-2">{label}</span>
-                            <span className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-green-400" : ""
-                              }`}>
+                            <span className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-green-400" : ""}`}>
                               {formatCurrency(val)}
                             </span>
                           </div>
