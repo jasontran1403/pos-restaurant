@@ -9,7 +9,7 @@ import {
   DollarSign,    // Cash
   CreditCard     // Bank
 } from "lucide-react";
-
+import { motion, AnimatePresence } from "framer-motion"; // Thêm Framer Motion
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,6 +18,9 @@ const PendingOrder = ({ handleTabClick }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [expandedOrder, setExpandedOrder] = useState(null); // State to track expanded order
+  const [orderDetails, setOrderDetails] = useState(null); // State to store fetched details
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false); // Loading state for details
 
   /* ----------- Lấy dữ liệu ----------- */
   useEffect(() => {
@@ -42,6 +45,28 @@ const PendingOrder = ({ handleTabClick }) => {
       })
       .catch(console.error);
   }
+
+  /* ----------- Fetch Order Details ----------- */
+  const fetchOrderDetails = (orderId) => {
+    setIsLoadingDetails(true);
+    Axios.get(`${API_ENDPOINT}shift/edit-bill/${orderId}`, {
+      headers: {
+        "ngrok-skip-browser-warning": "69420",
+      },
+    })
+      .then((res) => {
+        setOrderDetails(res.data);
+      })
+      .catch((error) => {
+        Swal.fire({
+          title: "Không thể tải đơn hàng",
+          icon: "error",
+          timer: 1200,
+          showConfirmButton: false,
+        });
+      })
+      .finally(() => setIsLoadingDetails(false));
+  };
 
   /* ----------- Helpers ----------- */
   const formatNumber = (n) =>
@@ -122,6 +147,43 @@ const PendingOrder = ({ handleTabClick }) => {
     handleTabClick("Trading");
   };
 
+  /* ----------- Handle Expand/Collapse ----------- */
+  const handleOrderClick = (orderId) => {
+    if (expandedOrder === orderId) {
+      setExpandedOrder(null);
+      setOrderDetails(null);
+    } else {
+      setExpandedOrder(orderId);
+      fetchOrderDetails(orderId);
+    }
+  };
+
+  // Animation variants
+  const itemVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 },
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: {
+      opacity: 1,
+      height: "auto",
+      transition: {
+        when: "beforeChildren",
+        staggerChildren: 0.05,
+      },
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      transition: {
+        when: "afterChildren",
+      },
+    },
+  };
+
   return (
     <div className="space-y-4">
       {/* SEARCH */}
@@ -139,11 +201,15 @@ const PendingOrder = ({ handleTabClick }) => {
       {/* LIST */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {listOrders.map((order) => (
-          <div
+          <motion.div
             key={order.orderId}
             className="w-[95svw] sm:w-full backdrop-blur-md bg-[#76807A80]/50
                        rounded-2xl shadow-md p-4 grid grid-cols-3 items-center
-                       border border-white/10"
+                       border border-white/10 cursor-pointer"
+            onClick={() => handleOrderClick(order.orderId)}
+            initial={{ scale: 1 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             {/* TIME */}
             <div className="text-left text-xs text-white/80 leading-tight">
@@ -179,7 +245,10 @@ const PendingOrder = ({ handleTabClick }) => {
               {/* ICONS */}
               <div className="flex gap-2 mt-1">
                 <button
-                  onClick={() => handleEdit(order.orderId)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(order.orderId);
+                  }}
                   className="text-white hover:text-yellow-400 transition"
                   title="Chỉnh sửa"
                 >
@@ -187,7 +256,10 @@ const PendingOrder = ({ handleTabClick }) => {
                 </button>
 
                 <button
-                  onClick={() => handleDelete(order.orderId)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(order.orderId);
+                  }}
                   className="text-white hover:text-red-500 transition"
                   title="Xoá"
                 >
@@ -195,7 +267,10 @@ const PendingOrder = ({ handleTabClick }) => {
                 </button>
 
                 <button
-                  onClick={() => handleToggleStatus(order.orderId, "CASH")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleStatus(order.orderId, "CASH");
+                  }}
                   className="text-white hover:text-green-300 transition"
                   title="Chuyển về CASH"
                 >
@@ -203,7 +278,10 @@ const PendingOrder = ({ handleTabClick }) => {
                 </button>
 
                 <button
-                  onClick={() => handleToggleStatus(order.orderId, "BANK")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleStatus(order.orderId, "BANK");
+                  }}
                   className="text-white hover:text-blue-300 transition"
                   title="Chuyển về BANK"
                 >
@@ -211,7 +289,40 @@ const PendingOrder = ({ handleTabClick }) => {
                 </button>
               </div>
             </div>
-          </div>
+
+            {/* ORDER DETAILS (EXPANDABLE) */}
+            <AnimatePresence>
+              {expandedOrder === order.orderId && (
+                <motion.div
+                  className="col-span-3 mt-4 p-2 bg-white/10 rounded-lg overflow-hidden"
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={containerVariants}
+                  transition={{ duration: 0.3 }}
+                >
+                  {isLoadingDetails ? (
+                    <div className="flex justify-center py-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    </div>
+                  ) : (
+                    orderDetails?.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        className="flex justify-between items-center py-1 border-b border-white/5 last:border-b-0"
+                        variants={itemVariants}
+                      >
+                        <span className="text-white">{item.name} × {item.qty}</span>
+                        <span className="text-green-200">
+                          {formatNumber(item.price * item.qty)} đ
+                        </span>
+                      </motion.div>
+                    ))
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         ))}
       </div>
 
@@ -229,10 +340,11 @@ const PendingOrder = ({ handleTabClick }) => {
           <button
             key={p}
             onClick={() => setCurrentPage(p)}
-            className={`px-3 py-1 rounded ${p === currentPage
-              ? "bg-white text-black font-semibold"
-              : "bg-white/20 text-white"
-              }`}
+            className={`px-3 py-1 rounded ${
+              p === currentPage
+                ? "bg-white text-black font-semibold"
+                : "bg-white/20 text-white"
+            }`}
           >
             {p}
           </button>

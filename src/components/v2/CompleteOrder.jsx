@@ -3,6 +3,7 @@ import Axios from "axios";
 import { API_ENDPOINT } from "../../constants";
 import Swal from "sweetalert2/dist/sweetalert2.js";
 import "sweetalert2/src/sweetalert2.scss";
+import { motion, AnimatePresence } from "framer-motion"; // Thêm Framer Motion
 
 const ITEMS_PER_PAGE = 5;
 
@@ -11,6 +12,9 @@ const CompleteOrder = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false); // Thêm trạng thái loading cho details
 
   /* ----------- Lấy dữ liệu ----------- */
   useEffect(() => {
@@ -20,7 +24,7 @@ const CompleteOrder = () => {
   function fetchOrders() {
     Axios.get(`${API_ENDPOINT}shift/order-completed`, {
       params: {
-        page: currentPage - 1, // Spring Boot dùng page từ 0
+        page: currentPage - 1,
         size: ITEMS_PER_PAGE,
         shiftId: localStorage.getItem("shiftId"),
         search: searchTerm,
@@ -35,6 +39,28 @@ const CompleteOrder = () => {
       })
       .catch(console.error);
   }
+
+  /* ----------- Fetch Order Details ----------- */
+  const fetchOrderDetails = (orderId) => {
+    setIsLoadingDetails(true);
+    Axios.get(`${API_ENDPOINT}shift/edit-bill/${orderId}`, {
+      headers: {
+        "ngrok-skip-browser-warning": "69420",
+      },
+    })
+      .then((res) => {
+        setOrderDetails(res.data);
+      })
+      .catch((error) => {
+        Swal.fire({
+          title: "Không thể tải đơn hàng",
+          icon: "error",
+          timer: 1200,
+          showConfirmButton: false,
+        });
+      })
+      .finally(() => setIsLoadingDetails(false));
+  };
 
   /* ----------- Helpers ----------- */
   const formatNumber = (n) =>
@@ -77,6 +103,43 @@ const CompleteOrder = () => {
     });
   };
 
+  /* ----------- Handle Expand/Collapse ----------- */
+  const handleOrderClick = (orderId) => {
+    if (expandedOrder === orderId) {
+      setExpandedOrder(null);
+      setOrderDetails(null);
+    } else {
+      setExpandedOrder(orderId);
+      fetchOrderDetails(orderId);
+    }
+  };
+
+  // Animation variants
+  const itemVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: {
+      opacity: 1,
+      height: "auto",
+      transition: {
+        when: "beforeChildren",
+        staggerChildren: 0.05
+      }
+    },
+    exit: {
+      opacity: 0,
+      height: 0,
+      transition: {
+        when: "afterChildren"
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* SEARCH */}
@@ -86,7 +149,7 @@ const CompleteOrder = () => {
         value={searchTerm}
         onChange={(e) => {
           setSearchTerm(e.target.value);
-          setCurrentPage(1); // reset page khi search
+          setCurrentPage(1);
         }}
         className="w-[95svw] sm:w-80 mx-auto block px-3 py-2 rounded-lg bg-white/20 backdrop-blur placeholder-white/70 text-white focus:outline-none"
       />
@@ -94,11 +157,15 @@ const CompleteOrder = () => {
       {/* LIST */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {listOrders.map((order) => (
-          <div
+          <motion.div
             key={order.orderId}
             className="w-[95svw] sm:w-full backdrop-blur-md bg-[#76807A80]/50
                        rounded-2xl shadow-md p-4 grid grid-cols-3 items-center
-                       border border-white/10"
+                       border border-white/10 cursor-pointer"
+            onClick={() => handleOrderClick(order.orderId)}
+            initial={{ scale: 1 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             {/* TIME */}
             <div className="text-left text-xs text-white/80 leading-tight">
@@ -130,14 +197,50 @@ const CompleteOrder = () => {
                 {order.status}
               </span>
               <button
-                onClick={() => toggleStatus(order.orderId, order.status)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleStatus(order.orderId, order.status);
+                }}
                 className="mt-1 px-3 py-1 bg-white/20 hover:bg-white/30
                            text-white text-xs rounded-full transition"
               >
                 Cập nhật
               </button>
             </div>
-          </div>
+
+            {/* ORDER DETAILS (EXPANDABLE) */}
+            <AnimatePresence>
+              {expandedOrder === order.orderId && (
+                <motion.div
+                  className="col-span-3 mt-4 p-2 bg-white/10 rounded-lg overflow-hidden"
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={containerVariants}
+                  transition={{ duration: 0.3 }}
+                >
+                  {isLoadingDetails ? (
+                    <div className="flex justify-center py-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    </div>
+                  ) : (
+                    orderDetails?.map((item) => (
+                      <motion.div
+                        key={item.id}
+                        className="flex justify-between items-center py-1 border-b border-white/5 last:border-b-0"
+                        variants={itemVariants}
+                      >
+                        <span className="text-white">{item.name} × {item.qty}</span>
+                        <span className="text-green-200">
+                          {formatNumber(item.price * item.qty)} đ
+                        </span>
+                      </motion.div>
+                    ))
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         ))}
       </div>
 

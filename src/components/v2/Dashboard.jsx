@@ -224,7 +224,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   };
 
   const getDiscountedPrice = (item) => {
-    if (item.type > 0) {
+    if (item.type > 0 && item.type <= 100) {
       const discountAmount = item.price * (item.type / 100);
       const discountedPrice = item.price - discountAmount;
       return roundUpToThousand(discountedPrice);
@@ -320,145 +320,34 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
               animate={controls}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              {/* Hotdogs */}
-              <motion.div
-                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
-              >
-                <div className="w-1/3">
-                  <img
-                    src="../icons/hotdog.png"
-                    alt="Hotdogs"
-                    className="w-full h-30 rounded-lg object-cover"
-                  />
-                </div>
-                <div className="w-2/3 flex flex-col gap-2">
+              <div className="grid grid-cols-3 gap-4">
+                {filteredMenu.map((item) => (
                   <motion.div
-                    onClick={() => handleAdd({ id: 1, name: "German Hotdogs", price: 25000, image: "", category: "Hotdogs" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 1 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 1 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                    key={item.id}
+                    onClick={() => handleAdd(item)}
+                    className={`cursor-pointer ${focusedItem === item.id ? '' : ''}`}
+                    animate={focusedItem === item.id ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
                   >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">German Hotdogs</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(25000)}</p>
-                    </div>
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    <p className="text-center text-black-400 text-[14px]">{item.name}</p>
+                    {item.type > 0 && item.type <= 100 ? (
+                      <div className="text-center">
+                        <p className="text-green-400 text-[12px]">
+                          {formatCurrency(getDiscountedPrice(item))}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-center text-green-400 text-[12px]">
+                        {formatCurrency(item.price)}
+                      </p>
+                    )}
                   </motion.div>
-                  <motion.div
-                    onClick={() => handleAdd({ id: 2, name: "Mozzarella Hotdogs", price: 35000, image: "", category: "Hotdogs" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 2 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 2 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
-                  >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">Mozzarella Hotdogs</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(35000)}</p>
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-
-              {/* Hamburgers */}
-              <motion.div
-                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
-              >
-                <div className="w-2/3 flex flex-col gap-2">
-                  <motion.div
-                    onClick={() => handleAdd({ id: 3, name: "Hamburger", price: 45000, image: "", category: "Hamburgers" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 3 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 3 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
-                  >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">Hamburger</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
-                    </div>
-                  </motion.div>
-                  <motion.div
-                    onClick={() => handleAdd({ id: 4, name: "Double Cheese Burger", price: 60000, image: "", category: "Hamburgers" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 4 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 4 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
-                  >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">Double Cheese Burger</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(60000)}</p>
-                    </div>
-                  </motion.div>
-                </div>
-                <div className="w-1/3">
-                  <img
-                    src="../icons/hamber.png"
-                    alt="Hamburgers"
-                    className="w-full h-30 rounded-lg object-cover"
-                  />
-                </div>
-              </motion.div>
-
-              {/* Sausages */}
-              <motion.div
-                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
-              >
-                <div className="w-1/3">
-                  <img
-                    src="../icons/sausage.png"
-                    alt="Sausages"
-                    className="w-full h-30 rounded-lg object-cover"
-                  />
-                </div>
-                <div className="w-2/3 flex flex-col gap-2">
-                  <motion.div
-                    onClick={() => handleAdd({ id: 5, name: "Garlic Sausage", price: 45000, image: "", category: "Sausages" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 5 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 5 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
-                  >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">Garlic Sausage</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
-                    </div>
-                  </motion.div>
-                  <motion.div
-                    onClick={() => handleAdd({ id: 6, name: "Cheddar Sausage", price: 45000, image: "", category: "Sausages" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 6 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 6 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
-                  >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">Cheddar Sausage</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
-                    </div>
-                  </motion.div>
-                  <motion.div
-                    onClick={() => handleAdd({ id: 7, name: "Curry Wurst", price: 45000, image: "", category: "Sausages" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 7 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 7 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
-                  >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">Curry Wurst</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(45000)}</p>
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-
-              {/* Pasta */}
-              <motion.div
-                className="flex items-center gap-4 w-full bg-white/5 backdrop-blur-md rounded-xl p-4"
-              >
-                <div className="w-2/3 flex flex-col gap-2">
-                  <motion.div
-                    onClick={() => handleAdd({ id: 8, name: "Italian Lasagna", price: 99000, image: "", category: "Pasta" })}
-                    className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer ${focusedItem === 8 ? 'ring-2 ring-green-500' : ''}`}
-                    animate={focusedItem === 8 ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
-                  >
-                    <div className="flex-1">
-                      <p className="text-lg font-semibold">Italian Lasagna</p>
-                      <p className="text-green-400 font-medium">{formatCurrency(99000)}</p>
-                    </div>
-                  </motion.div>
-                </div>
-                <div className="w-1/3">
-                  <img
-                    src="../icons/lasanag.png"
-                    alt="Pasta"
-                    className="w-full h-30 rounded-lg object-cover"
-                  />
-                </div>
-              </motion.div>
+                ))}
+              </div>
             </motion.div>
           </motion.div>
 

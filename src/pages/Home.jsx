@@ -497,6 +497,7 @@ const Home = () => {
         )}
 
         {selectedDasTab === "Account" && <Account />}
+        
         <div className="cover">
           <SubNav
             listNav={listDasNav}
