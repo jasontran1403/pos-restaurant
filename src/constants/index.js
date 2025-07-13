@@ -1,12 +1,12 @@
 import { people01, people02, people03, facebook, instagram, linkedin, youtube, telegram, twitter, airbnb, binance, coinbase, dropbox, send, shield, star } from "../assets";
 
-export const API_ENDPOINT = "http://localhost:8080/api/v1/";
-export const FILE_ENDPOINT = "http://localhost:8888";
-export const WS_ENDPOINT = "ws://localhost:8888/ws/price";
+// export const API_ENDPOINT = "http://localhost:8080/api/v1/";
+// export const FILE_ENDPOINT = "http://localhost:8888";
+// export const WS_ENDPOINT = "ws://localhost:8888/ws/price";
 
-// export const API_ENDPOINT = "https://ghoul-helpful-salmon.ngrok-free.app/api/v1/";
-// export const FILE_ENDPOINT = "https://ghoul-helpful-salmon.ngrok-free.app";
-// export const WS_ENDPOINT = "wss://ghoul-helpful-salmon.ngrok-free.app/ws/price";
+export const API_ENDPOINT = "https://www.original-taste.vn/api/v1/";
+export const FILE_ENDPOINT = "https://ghoul-helpful-salmon.ngrok-free.app";
+export const WS_ENDPOINT = "wss://ghoul-helpful-salmon.ngrok-free.app/ws/price";
 
 export const users = [
   {

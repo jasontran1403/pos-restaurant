@@ -417,7 +417,6 @@ const Home = () => {
                     className="flex items-center gap-2 px-3 py-1 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition"
                   >
                     <LogOut size={14} />
-                    Mở ca
                   </button>
 
                   <button
@@ -430,7 +429,6 @@ const Home = () => {
                     }`}
                   >
                     <LogOut size={14} />
-                    Đóng ca
                   </button>
 
                   <button
@@ -443,7 +441,6 @@ const Home = () => {
                     onClick={() => setShowCashModal(true)}
                   >
                     <DollarSign size={14} />
-                    Kiểm tiền
                   </button>
 
                   <button
@@ -456,7 +453,6 @@ const Home = () => {
                     onClick={() => setShowStockModal(true)}
                   >
                     <LineChart size={14} />
-                    Kiểm kho
                   </button>
                 </div>
               </div>
