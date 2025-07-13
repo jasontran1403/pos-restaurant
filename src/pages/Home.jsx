@@ -14,7 +14,7 @@ import Swal from "sweetalert2/dist/sweetalert2.js";
 import "sweetalert2/src/sweetalert2.scss";
 import { LogOut, DollarSign, LineChart } from "lucide-react";
 
-const listDasNav = ["Balance", "Trading", "Account"];
+const listDasNav = ["Trading", "Balance", "Account"];
 
 const Home = () => {
   const { multiTabDetect } = useContext(MultiTabDetectContext);

@@ -607,7 +607,7 @@ small {
 
 .bottom-tap-bar {
   display: flex;
-  width: 100vw;
+  width: 70vw;
   /* Điều chỉnh lại cho phù hợp với kích thước màn hình */
   margin: auto;
   border-radius: 50px;
