@@ -162,6 +162,16 @@ input[type="number"] {
   display: none; /* Chrome, Safari, Opera */
 }
 
+/* src/index.css hoặc tailwind.css */
+.no-touch-callout {
+  -webkit-touch-callout: none;   /* iOS & Chrome iOS */
+  -webkit-user-select: none;     /* Safari */
+  -moz-user-select: none;        /* Firefox */
+  -ms-user-select: none;         /* Edge/IE */
+  user-select: none;             /* Standard */
+  -webkit-user-drag: none;       /* Ngăn "Lưu ảnh" / drag ảnh */
+}
+
 .transaction-btn button:hover {
 }
 

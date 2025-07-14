@@ -322,7 +322,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     }
 
     setCart((prev) => prev.filter((c) => c.id !== itemId));
-    toast.success("Đã xóa món khỏi giỏ hàng!");
   };
 
   /* ------------------ LONG-PRESS HANDLING ------------------ */
@@ -571,7 +570,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-[80px] object-cover rounded-lg"
+                      className="w-full h-[80px] object-cover rounded-lg no-touch-callout pointer-events-none"
+                      onContextMenu={(e) => e.preventDefault()}    // chặn Android Chrome
                     />
                     <p className="text-center text-white text-[10px] font-bold">
                       {item.name}

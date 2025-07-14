@@ -426,8 +426,8 @@ const Home = () => {
                     onClick={handleDisconnect}
                     disabled={!canLogout}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${canLogout
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                      ? "bg-red-500 text-white hover:bg-red-600"
+                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
                       }`}
                   >
                     <LogOut size={20} />
@@ -435,8 +435,8 @@ const Home = () => {
 
                   <button
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${isEnabled
-                        ? "bg-green-500 text-white hover:bg-green-600"
-                        : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                      ? "bg-green-500 text-white hover:bg-green-600"
+                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
                       }`}
                     disabled={!isEnabled}
                     onClick={() => setShowCashModal(true)}
@@ -446,8 +446,8 @@ const Home = () => {
 
                   <button
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${isEnabled
-                        ? "bg-blue-500 text-white hover:bg-blue-600"
-                        : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
                       }`}
                     disabled={!isEnabled}
                     onClick={() => setShowStockModal(true)}
@@ -511,8 +511,8 @@ const Home = () => {
 
       {/* Open Shift Modal */}
       {showOpenShiftModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-xl space-y-4 relative">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 mt-[40px]">
+          <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
             <h2 className="text-xl font-semibold mb-2 text-center">Nhập số tiền đầu ca</h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
               {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
@@ -584,8 +584,8 @@ const Home = () => {
 
       {/* Cash Modal */}
       {showCashModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[90%] max-w-md shadow-xl space-y-4 relative">
+        <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
+          <div className="bg-white rounded-xl p-3 w-[90%] max-w-md shadow-xl space-y-4 relative">
             <h2 className="text-xl font-semibold mb-2 text-center">Nhập số tiền</h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
               {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
@@ -678,43 +678,50 @@ const Home = () => {
 
       {/* Stock Modal */}
       {showStockModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 mt-4">
-          <div className="bg-white rounded-xl p-2 w-[80%] max-w-2xl shadow-xl space-y-2 relative max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 flex items-start justify-center z-50 mt-[120px]">
+          <div className="bg-white rounded-xl p-2 w-[90%] max-w-2xl shadow-xl
+                    flex flex-col h-[60svh] overflow-hidden">
+            {/* LIST */}
             {menuItems.length === 0 ? (
-              <p className="text-center text-gray-500">Không có sản phẩm để kiểm kho.</p>
+              <p className="text-center text-gray-500 flex-1 flex items-center justify-center">
+                Không có sản phẩm để kiểm kho.
+              </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {menuItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 border-b">
-                    <span className="flex-1">{item.name}</span>
-                    <div className="flex items-center gap-2">
+              <div className="flex-1 max-h-[42svh] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {menuItems.map((item) => (
+                    <div key={item.id}
+                      className="flex items-center justify-between p-2 border-b">
+                      <span className="flex-1">{item.name}</span>
                       <input
                         type="number"
                         min="0"
                         value={stockQuantities[item.id] || 0}
-                        onChange={(e) => handleStockQuantityChange(item.id, e.target.value)}
+                        onChange={(e) =>
+                          handleStockQuantityChange(item.id, e.target.value)
+                        }
                         className="w-20 border rounded px-2 py-1"
                       />
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
-            <div className="flex justify-between mt-6">
+
+            {/* BUTTONS */}
+            <div className="flex justify-between pt-10">
               <button
                 onClick={() => setShowStockModal(false)}
-                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-              >
+                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
                 Hủy
               </button>
               <button
                 onClick={handleCheckStock}
                 disabled={menuItems.length === 0}
                 className={`px-4 py-2 rounded ${menuItems.length === 0
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-green-500 hover:bg-green-600 text-white"
-                  }`}
-              >
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}>
                 Xác nhận kiểm kho
               </button>
             </div>
