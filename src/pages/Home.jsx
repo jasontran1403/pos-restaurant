@@ -458,7 +458,7 @@ const Home = () => {
               </div>
 
               {selectedDasTab === "Trading" && (
-                <div className="animation-fadeIn transaction-btn mt-4">
+                <div className="animation-fadeIn transaction-btn">
                   <button
                     className={tradingItemView === 1 ? "glow" : ""}
                     onClick={() => changeShowViewTrading(1)}

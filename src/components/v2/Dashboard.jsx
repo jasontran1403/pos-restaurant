@@ -528,7 +528,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       )}
 
       {!loading && (
-        <div className="flex flex-col gap-4 w-[95svw] mx-auto mt-4">
+        <div className="flex flex-col gap-4 w-[95svw] mx-auto">
           {/* slider */}
           <motion.div
             ref={sliderRef}
