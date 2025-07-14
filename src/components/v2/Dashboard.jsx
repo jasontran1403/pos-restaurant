@@ -18,18 +18,27 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   const [menu, setMenu] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [cart, setCart] = useState([]);
+  const cartRef = useRef(cart); // Ref to track latest cart state
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [focusedItem, setFocusedItem] = useState(null);
   const [showCartPopup, setShowCartPopup] = useState(false);
   const [longPressItemId, setLongPressItemId] = useState(null); // Track long-press item
   const [isLongPressActive, setIsLongPressActive] = useState(false); // Track animation state
-  const [hasLongPressed, setHasLongPressed] = useState(false); // Track if long-press occurred
+  const [longPressedItemId, setLongPressedItemId] = useState(null); // Track the ID of the item that was long-pressed
   const longPressTimer = useRef(null); // Timer for long-press
+  const itemRefs = useRef({}); // Store refs for each item to attach event listeners
+  const touchStartPos = useRef(null); // Track touch start position
 
   /* ----- swipe ----- */
   const sliderRef = useRef(null);
   const [dragLimit, setDragLimit] = useState(0);
+
+  // Update cartRef whenever cart changes
+  useEffect(() => {
+    cartRef.current = cart;
+    console.log("Cart updated in ref:", cart); // Debug log
+  }, [cart]);
 
   useEffect(() => {
     const orderId = localStorage.getItem("orderId");
@@ -43,7 +52,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     })
       .then((res) => {
         setCart(res.data);
-        console.log(res.data);
+        console.log("Loaded cart from API:", res.data); // Debug log
       })
       .catch((error) => {
         Swal.fire({
@@ -53,7 +62,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
           showConfirmButton: false,
         });
       });
-  }, [localStorage.getItem("orderId")]);
+  }, []);
 
   const formatCurrency = (value) =>
     value.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
@@ -67,7 +76,10 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     Axios.get(`${API_ENDPOINT}shift/menu/${menuType}`, {
       headers: { "ngrok-skip-browser-warning": "69420" },
     })
-      .then((res) => setMenu(res.data))
+      .then((res) => {
+        console.log("Menu data:", res.data); // Debug log
+        setMenu(res.data);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [accessToken, tradingItemView]);
@@ -136,7 +148,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
         handleClearCart();
       })
       .catch((e) => {
-        console.log(e);
+        console.log("Error saving bill:", e); // Debug log
         Swal.fire({
           title: "Đã xảy ra lỗi!",
           icon: "error",
@@ -160,6 +172,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     setCart([]);
     localStorage.removeItem("orderId");
     setShowCartPopup(false);
+    console.log("Cart cleared"); // Debug log
   };
 
   const actionButtons = [
@@ -209,7 +222,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 Pesh w-6"
+          className="h-6 w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -257,13 +270,16 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     }
 
     setCart((prev) => {
-      const idx = prev.findIndex((c) => c.id === item.id);
+      const idx = prev.findIndex((c) => String(c.id) === String(item.id));
       if (idx > -1) {
         const updated = [...prev];
         updated[idx].qty += 1;
+        console.log("Updated cart (increment):", updated); // Debug log
         return updated;
       }
-      return [...prev, { ...item, qty: 1 }];
+      const updatedCart = [...prev, { ...item, qty: 1 }];
+      console.log("Updated cart (add):", updatedCart); // Debug log
+      return updatedCart;
     });
     setFocusedItem(item.id);
     setTimeout(() => setFocusedItem(null), 1000); // Hide focus border after 1s
@@ -281,9 +297,10 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
 
     setCart((prev) =>
       prev.map((item) =>
-        item.id === itemId ? { ...item, qty: item.qty + 1 } : item
+        String(item.id) === String(itemId) ? { ...item, qty: item.qty + 1 } : item
       )
     );
+    console.log("Increased quantity for item:", itemId); // Debug log
   };
 
   const handleDecrease = (itemId) => {
@@ -293,13 +310,17 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     }
 
     setCart((prev) => {
-      const existingItem = prev.find((item) => item.id === itemId);
+      const existingItem = prev.find((item) => String(item.id) === String(itemId));
       if (existingItem.qty <= 1) {
-        return prev.filter((item) => item.id !== itemId);
+        const updatedCart = prev.filter((item) => String(item.id) !== String(itemId));
+        console.log("Cart after removal (decrease):", updatedCart); // Debug log
+        return updatedCart;
       }
-      return prev.map((item) =>
-        item.id === itemId ? { ...item, qty: item.qty - 1 } : item
+      const updatedCart = prev.map((item) =>
+        String(item.id) === String(itemId) ? { ...item, qty: item.qty - 1 } : item
       );
+      console.log("Cart after decrease:", updatedCart); // Debug log
+      return updatedCart;
     });
   };
 
@@ -321,38 +342,139 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi xử lý giỏ hàng.");
       return;
     }
-
-    setCart((prev) => prev.filter((c) => c.id !== itemId));
+    console.log("Removing item:", itemId); // Debug log
+    setCart((prev) => {
+      console.log("Cart before removal:", prev); // Debug log
+      const updatedCart = prev.filter((c) => String(c.id) !== String(itemId));
+      console.log("Cart after removal:", updatedCart); // Debug log
+      return updatedCart;
+    });
   };
 
   /* ------------------ LONG-PRESS HANDLING ------------------ */
   const startLongPress = (itemId, e) => {
-    if (!cartQtyMap[itemId] || longPressTimer.current) return; // Chỉ bắt đầu nếu mục trong giỏ và không có timer
-    if (isMobile) {
-      e.preventDefault(); // Ngăn menu ngữ cảnh trên di động
-      e.stopPropagation(); // Ngăn sự kiện lan truyền
+    e.stopPropagation(); // Prevent event bubbling
+    // Normalize itemId to string for consistent comparison
+    const normalizedItemId = String(itemId);
+    // Use cartRef to get the latest cart state
+    const itemInCart = cartRef.current.some((item) => String(item.id) === normalizedItemId);
+    if (!itemInCart) {
+      console.log("Long-press blocked: Item not in cart", {
+        itemId: normalizedItemId,
+        itemInCart,
+        cart: cartRef.current,
+      }); // Debug log
+      return;
     }
+    if (longPressTimer.current) {
+      console.log("Long-press blocked: Timer already exists", {
+        itemId: normalizedItemId,
+        timer: longPressTimer.current,
+      }); // Debug log
+      return;
+    }
+
+    console.log("Starting long-press for item:", normalizedItemId); // Debug log
+    touchStartPos.current = {
+      x: e.touches ? e.touches[0].clientX : e.clientX,
+      y: e.touches ? e.touches[0].clientY : e.clientY,
+    }; // Store touch start position
     longPressTimer.current = setTimeout(() => {
-      setLongPressItemId(itemId);
+      console.log("Long-press triggered for item:", normalizedItemId); // Debug log
+      setLongPressItemId(normalizedItemId);
       setIsLongPressActive(true);
-      setHasLongPressed(true); // Set flag to indicate long-press occurred
-      handleRemove(itemId);
+      setLongPressedItemId(normalizedItemId); // Set the ID of the long-pressed item
+      handleRemove(normalizedItemId);
+      longPressTimer.current = null; // Clear timer after triggering
       setTimeout(() => {
         setLongPressItemId(null);
         setIsLongPressActive(false);
-      }, 300); // Xóa animation sau khi lắc
-    }, 1000); // 1000ms cho nhấn giữ
+      }, 300); // Clear animation after shake
+    }, 1200); // 1200ms for long-press
   };
 
-  const cancelLongPress = () => {
+  const cancelLongPress = (e) => {
+    if (e) e.stopPropagation(); // Prevent event bubbling
     if (longPressTimer.current) {
+      console.log("Canceling long-press timer", {
+        target: e ? e.target.tagName : "unknown",
+      }); // Debug log with target element
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
     setLongPressItemId(null);
     setIsLongPressActive(false);
-    setTimeout(() => setHasLongPressed(false), 100); // Reset flag after a short delay
+    setTimeout(() => setLongPressedItemId(null), 100); // Reset long-pressed item ID
+    touchStartPos.current = null; // Clear touch start position
   };
+
+  /* ------------------ EVENT LISTENER SETUP FOR TOUCH/CONTEXT ------------------ */
+  useEffect(() => {
+    const handleTouchStart = (itemId) => (e) => {
+      console.log("Touch start on item:", itemId, { target: e.target.tagName }); // Debug log
+      startLongPress(itemId, e);
+    };
+
+    const handleTouchEnd = (e) => {
+      console.log("Touch end", { target: e.target.tagName }); // Debug log
+      cancelLongPress(e);
+    };
+
+    const handleTouchMove = (e) => {
+      if (!touchStartPos.current) return;
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const deltaX = Math.abs(currentX - touchStartPos.current.x);
+      const deltaY = Math.abs(currentY - touchStartPos.current.y);
+      console.log("Touch move detected:", { deltaX, deltaY }); // Debug log
+      // Ignore small movements (increased to 15 pixels)
+      if (deltaX > 15 || deltaY > 15) {
+        console.log("Canceling long-press due to significant touch move"); // Debug log
+        cancelLongPress(e);
+      }
+    };
+
+    const handleContextMenu = (e) => {
+      e.preventDefault(); // Prevent context menu
+      e.stopPropagation(); // Prevent event bubbling
+    };
+
+    // Attach event listeners to each item's ref
+    const attachListeners = () => {
+      Object.keys(itemRefs.current).forEach((itemId) => {
+        const itemElement = itemRefs.current[itemId];
+        if (itemElement) {
+          itemElement.addEventListener("touchstart", handleTouchStart(itemId), { passive: false });
+          itemElement.addEventListener("touchend", handleTouchEnd, { passive: true });
+          itemElement.addEventListener("touchmove", handleTouchMove, { passive: true });
+          itemElement.addEventListener("contextmenu", handleContextMenu, { passive: false });
+          itemElement.addEventListener("mousedown", handleTouchStart(itemId), { passive: false });
+          itemElement.addEventListener("mouseup", handleTouchEnd, { passive: true });
+          itemElement.addEventListener("mouseleave", handleTouchEnd, { passive: true });
+        }
+      });
+    };
+
+    // Cleanup event listeners
+    const cleanupListeners = () => {
+      Object.keys(itemRefs.current).forEach((itemId) => {
+        const itemElement = itemRefs.current[itemId];
+        if (itemElement) {
+          itemElement.removeEventListener("touchstart", handleTouchStart(itemId), { passive: false });
+          itemElement.removeEventListener("touchend", handleTouchEnd, { passive: true });
+          itemElement.removeEventListener("touchmove", handleTouchMove, { passive: true });
+          itemElement.removeEventListener("contextmenu", handleContextMenu, { passive: false });
+          itemElement.removeEventListener("mousedown", handleTouchStart(itemId), { passive: false });
+          itemElement.removeEventListener("mouseup", handleTouchEnd, { passive: true });
+          itemElement.removeEventListener("mouseleave", handleTouchEnd, { passive: true });
+        }
+      });
+    };
+
+    // Attach listeners initially and re-attach when filteredMenu changes
+    attachListeners();
+    return cleanupListeners;
+  }, [filteredMenu]); // Depend on filteredMenu to update refs
 
   /* ------------------ CART ICON ANIMATION ------------------ */
   useEffect(() => {
@@ -367,14 +489,14 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     <div className="animation-fadeIn relative">
       {/* Draggable Cart Button with Glassmorphism and Badge Overlay */}
       <motion.div
-        className="fixed right-4 z-[1000]" // Highest z-index to ensure it's on top
+        className="fixed right-4 z-[1000]"
         animate={cartControls}
         drag
         dragMomentum={false}
         dragConstraints={{
           left: -window.innerWidth + 60,
           right: 0,
-          top: showCartPopup ? window.innerHeight - 100 : 0, // Allow dragging to top when popup is closed
+          top: showCartPopup ? window.innerHeight - 100 : 0,
           bottom: showCartPopup ? window.innerHeight - 100 : window.innerHeight - 100,
         }}
       >
@@ -409,7 +531,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       {/* Cart Popup */}
       {showCartPopup && (
         <motion.div
-          className="fixed max-h-[65svh] mt-[130px] inset-0 bg-black/50 flex items-center justify-center z-40"
+          className="fixed max-h-[65svh] mt-[120px] inset-0 bg-black/50 flex items-center justify-center z-40"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -429,7 +551,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
               </p>
             ) : (
               <div className="flex flex-col flex-grow">
-                <div className="flex-grow max-h-[34vh] overflow-y-auto scrollbar-hide">
+                <div className="flex-grow max-h-[36vh] overflow-y-auto scrollbar-hide">
                   <motion.ul layout className="flex flex-col gap-3">
                     {cart.map((c, index) => (
                       <React.Fragment key={c.id}>
@@ -443,7 +565,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                             {c.name} × {c.qty}
                           </span>
                           <div className="flex items-center gap-3">
-                            <span className="text-green-400 text-[14px]">
+                            <span className="text-black text-[14px]">
                               {formatCurrency(c.qty * c.price)}
                             </span>
                             <button
@@ -488,13 +610,17 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                         ].map(([label, val, bold]) => (
                           <div
                             key={label}
-                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""}`}
+                            className={`flex items-center w-full min-w-0 justify-between ${
+                              bold ? "font-semibold" : ""
+                            }`}
                           >
                             <span className="flex-1 min-w-0 truncate pr-2 text-black">
                               {label}
                             </span>
                             <span
-                              className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-green-400" : "text-black"}`}
+                              className={`flex-shrink-0 whitespace-nowrap ${
+                                bold ? "text-black" : "text-black"
+                              }`}
                             >
                               {formatCurrency(val)}
                             </span>
@@ -545,27 +671,28 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                 {filteredMenu.map((item) => (
                   <motion.div
                     key={item.id}
-                    className={`cursor-pointer relative no-select no-touch ${
-                      isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
+                    ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item
+                    className={`cursor-pointer relative no-select ${
+                      isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""
                     }`}
-                    onClick={() => {
-                      if (hasLongPressed) return; // Prevent adding to cart if long-press occurred
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent click event bubbling
+                      if (longPressedItemId === String(item.id)) {
+                        console.log("Blocked click due to recent long-press:", item.id); // Debug log
+                        return;
+                      }
                       handleAdd(item);
                     }}
-                    onMouseDown={() => startLongPress(item.id)}
-                    onMouseUp={cancelLongPress}
-                    onMouseLeave={cancelLongPress}
-                    onTouchStart={(e) => startLongPress(item.id, e)}
-                    onTouchEnd={cancelLongPress}
-                    onContextMenu={(e) => e.preventDefault()} // Ngăn menu ngữ cảnh
-                    onTouchMove={(e) => e.preventDefault()} // Ngăn các hành vi cảm ứng khác
+                    onMouseDown={(e) => startLongPress(item.id, e)}
+                    onMouseUp={(e) => cancelLongPress(e)}
+                    onMouseLeave={(e) => cancelLongPress(e)}
                     animate={
                       focusedItem === item.id
                         ? {
                             y: [-10, 0, -5, 0],
                             transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
                           }
-                        : isLongPressActive && longPressItemId === item.id
+                        : isLongPressActive && longPressItemId === String(item.id)
                         ? {
                             x: [-5, 5, -5, 5, 0],
                             transition: { duration: 0.3, repeat: 1 },
@@ -576,29 +703,26 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-[80px] object-cover rounded-lg no-select no-touch pointer-events-none"
-                      onContextMenu={(e) => e.preventDefault()} // Ngăn menu ngữ cảnh
-                      onTouchStart={(e) => e.preventDefault()} // Ngăn hành vi mặc định trên di động
-                      onTouchMove={(e) => e.preventDefault()} // Ngăn các hành vi cảm ứng khác
-                      draggable={false} // Ngăn kéo thả ảnh
+                      className="w-full h-[80px] object-cover rounded-lg pointer-events-none"
+                      draggable={false} // Prevent image dragging
                     />
-                    <p className="text-center text-white text-[10px] font-bold no-select no-touch">
+                    <p className="text-center text-white text-[10px] font-bold pointer-events-none">
                       {item.name}
                     </p>
                     {item.type > 0 && item.type <= 100 ? (
-                      <div className="text-center no-select no-touch">
-                        <p className="text-green-400 text-[8px] no-select no-touch">
+                      <div className="text-center pointer-events-none">
+                        <p className="text-green-400 text-[8px] pointer-events-none">
                           {formatCurrency(getDiscountedPrice(item))}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-center text-green-400 text-[8px] no-select no-touch">
+                      <p className="text-center text-green-400 text-[8px] pointer-events-none">
                         {formatCurrency(item.price)}
                       </p>
                     )}
                     {cartQtyMap[item.id] > 0 && (
                       <motion.span
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs no-select no-touch"
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs pointer-events-none"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}

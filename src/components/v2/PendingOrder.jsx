@@ -84,6 +84,9 @@ const PendingOrder = ({ handleTabClick }) => {
       if (isConfirmed) {
         Axios.get(`${API_ENDPOINT}shift/clear-bill/${orderId}`)
           .then(() => {
+            // Reset expanded order before fetching new orders
+            setExpandedOrder(null);
+            setOrderDetails(null);
             fetchOrders();
             Swal.fire({
               title: "Xóa đơn hàng thành công!",
@@ -93,14 +96,14 @@ const PendingOrder = ({ handleTabClick }) => {
               timerProgressBar: true,
             });
           })
-          .catch(() =>
+          .catch(() => {
             Swal.fire({
               title: "Đã xảy ra lỗi!",
               icon: "error",
               timer: 1200,
               showConfirmButton: false,
-            })
-          );
+            });
+          });
       }
     });
   };
@@ -117,6 +120,9 @@ const PendingOrder = ({ handleTabClick }) => {
       if (isConfirmed) {
         Axios.get(`${API_ENDPOINT}shift/confirm-bill/${orderId}/${status}`)
           .then(() => {
+            // Reset expanded order before fetching new orders
+            setExpandedOrder(null);
+            setOrderDetails(null);
             fetchOrders();
             Swal.fire({
               title: "Chuyển trạng thái đơn hàng thành công!",
@@ -126,14 +132,14 @@ const PendingOrder = ({ handleTabClick }) => {
               timerProgressBar: true,
             });
           })
-          .catch(() =>
+          .catch(() => {
             Swal.fire({
               title: "Đã xảy ra lỗi!",
               icon: "error",
               timer: 1200,
               showConfirmButton: false,
-            })
-          );
+            });
+          });
       }
     });
   };
@@ -199,12 +205,12 @@ const PendingOrder = ({ handleTabClick }) => {
             {/* Only show the card if it's expanded or no card is expanded */}
             {(!expandedOrder || expandedOrder === order.orderId) && (
               <motion.div
-                className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-4 grid grid-cols-3 items-start
+                className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-2 grid grid-cols-3 items-start
                            border border-white/10 cursor-pointer
                            ${expandedOrder === order.orderId ? "bg-[#76807A]/80 col-span-full" : "bg-[#76807A80]/50"}`}
                 onClick={() => handleOrderClick(order.orderId)}
                 initial={{ scale: 1 }}
-                animate={{ 
+                animate={{
                   scale: expandedOrder === order.orderId ? 1 : 1,
                   width: expandedOrder === order.orderId ? "100%" : "auto"
                 }}
@@ -237,12 +243,7 @@ const PendingOrder = ({ handleTabClick }) => {
                 </div>
 
                 {/* STATUS + TOGGLE */}
-                <div className="text-right flex flex-col items-end gap-2">
-                  {/* Status */}
-                  <span className="text-sm font-semibold bg-red-200 px-2 py-1 rounded text-green-600">
-                    {order.status}
-                  </span>
-
+                <div className="text-right flex flex-col items-end gap-2 mt-2">
                   {/* ICONS */}
                   <div className="flex gap-2 mt-1">
                     <button
@@ -351,11 +352,10 @@ const PendingOrder = ({ handleTabClick }) => {
             <button
               key={p}
               onClick={() => setCurrentPage(p)}
-              className={`px-3 py-1 rounded ${
-                p === currentPage
-                  ? "bg-white text-black font-semibold"
-                  : "bg-white/20 text-white"
-              }`}
+              className={`px-3 py-1 rounded ${p === currentPage
+                ? "bg-white text-black font-semibold"
+                : "bg-white/20 text-white"
+                }`}
             >
               {p}
             </button>

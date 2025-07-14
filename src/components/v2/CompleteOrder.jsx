@@ -161,12 +161,12 @@ const CompleteOrder = () => {
             {/* Only show the card if it's expanded or no card is expanded */}
             {(!expandedOrder || expandedOrder === order.orderId) && (
               <motion.div
-                className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-4 grid grid-cols-3 items-start
+                className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-3 grid grid-cols-3 items-start
                            border border-white/10 cursor-pointer
                            ${expandedOrder === order.orderId ? "bg-[#76807A]/80 col-span-full" : "bg-[#76807A80]/50"}`}
                 onClick={() => handleOrderClick(order.orderId)}
                 initial={{ scale: 1 }}
-                animate={{ 
+                animate={{
                   scale: expandedOrder === order.orderId ? 1 : 1,
                   width: expandedOrder === order.orderId ? "100%" : "auto"
                 }}
@@ -199,20 +199,37 @@ const CompleteOrder = () => {
                 </div>
 
                 {/* STATUS + TOGGLE */}
-                <div className="text-right flex flex-col items-end">
-                  <span className="text-sm font-semibold bg-red-200 p-1 rounded text-green-600">
-                    {order.status}
-                  </span>
-                  <button
+                <div className="text-right flex flex-col items-end mt-2">
+                  <span
+                    className="text-green-300"
+                    title={order.status === "CASH" ? "Tiền mặt" : "Chuyển khoản"}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleStatus(order.orderId, order.status);
                     }}
-                    className="mt-1 px-3 py-1 bg-white/20 hover:bg-white/30
-                               text-white text-xs rounded-full transition"
                   >
-                    Cập nhật
-                  </button>
+                    {order.status === "CASH" ? (
+                      // Cash icon SVG
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path d="M4 3a2 2 0 00-2 2v1h16V5a2 2 0 00-2-2H4zM18 8H2v7a2 2 0 002 2h12a2 2 0 002-2V8zM10 11a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    ) : (
+                      // Bank icon SVG
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M12 2L1 7l1 2h20l1-2-11-5zm0 3.26L17.74 7H6.26L12 5.26zM4 10v10H2v2h20v-2h-2V10H4zm2 2h2v8H6v-8zm4 0h2v8h-2v-8zm4 0h2v8h-2v-8zm4 0h2v8h-2v-8z" />
+                      </svg>
+                    )}
+                  </span>
                 </div>
 
                 {/* ORDER DETAILS (EXPANDABLE) */}
@@ -275,11 +292,10 @@ const CompleteOrder = () => {
             <button
               key={p}
               onClick={() => setCurrentPage(p)}
-              className={`px-3 py-1 rounded ${
-                p === currentPage
-                  ? "bg-white text-black font-semibold"
-                  : "bg-white/20 text-white"
-              }`}
+              className={`px-3 py-1 rounded ${p === currentPage
+                ? "bg-white text-black font-semibold"
+                : "bg-white/20 text-white"
+                }`}
             >
               {p}
             </button>
