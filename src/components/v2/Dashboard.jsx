@@ -404,23 +404,17 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       {/* Cart Popup */}
       {showCartPopup && (
         <motion.div
-          className="fixed max-h-[70svh] mt-[140px] inset-0 bg-black/50 flex items-center justify-center z-40"
+          className="fixed max-h-[65svh] mt-[130px] inset-0 bg-black/50 flex items-center justify-center z-40"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="p-3 bg-white/90 backdrop-blur-md rounded-xl max-w-lg w-full mx-2 h-full overflow-y-auto flex flex-col"
+            className="p-2 bg-white/80 backdrop-blur-md rounded-xl max-w-lg w-full mx-2 h-full overflow-y-auto flex flex-col"
             initial={{ scale: 0.8, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.8, y: 50 }}
           >
-            <button
-              className="float-right text-black hover:text-gray-600 text-2xl mb-2"
-              onClick={() => setShowCartPopup(false)}
-            >
-              ✕
-            </button>
             {cart.length === 0 ? (
               <p
                 className="text-sm text-center text-black italic flex-grow"
@@ -430,7 +424,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
               </p>
             ) : (
               <div className="flex flex-col flex-grow">
-                <div className="flex-grow max-h-[40vh] overflow-y-auto">
+                <div className="flex-grow max-h-[34vh] overflow-y-auto scrollbar-hide">
                   <motion.ul layout className="flex flex-col gap-3">
                     {cart.map((c, index) => (
                       <React.Fragment key={c.id}>
@@ -489,27 +483,25 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                         ].map(([label, val, bold]) => (
                           <div
                             key={label}
-                            className={`flex items-center w-full min-w-0 justify-between ${
-                              bold ? "font-semibold" : ""
-                            }`}
+                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""
+                              }`}
                           >
                             <span className="flex-1 min-w-0 truncate pr-2 text-black">
                               {label}
                             </span>
                             <span
-                              className={`flex-shrink-0 whitespace-nowrap ${
-                                bold ? "text-green-400" : "text-black"
-                              }`}
+                              className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-green-400" : "text-black"
+                                }`}
                             >
                               {formatCurrency(val)}
                             </span>
                           </div>
                         ))}
-                        <div className="w-full flex justify-center gap-4 mt-4 flex-wrap">
+                        <div className="w-full flex justify-center gap-4 mt-2 flex-wrap">
                           {actionButtons.map(({ icon, color, onClick, title }) => (
                             <button
                               key={title}
-                              className={`w-12 h-12 ${color} hover:brightness-110 text-white rounded-full flex items-center justify-center`}
+                              className={`w-10 h-10 ${color} hover:brightness-110 text-white rounded-full flex items-center justify-center`}
                               onClick={onClick}
                               title={title}
                             >
@@ -550,9 +542,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                 {filteredMenu.map((item) => (
                   <motion.div
                     key={item.id}
-                    className={`cursor-pointer relative ${
-                      isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
-                    }`}
+                    className={`cursor-pointer relative ${isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
+                      }`}
                     onClick={() => {
                       if (longPressTimer.current) return; // Prevent click during long-press
                       handleAdd(item);
@@ -566,15 +557,15 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     animate={
                       focusedItem === item.id
                         ? {
-                            y: [-10, 0, -5, 0],
-                            transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
-                          }
+                          y: [-10, 0, -5, 0],
+                          transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                        }
                         : isLongPressActive && longPressItemId === item.id
-                        ? {
+                          ? {
                             x: [-5, 5, -5, 5, 0],
                             transition: { duration: 0.3, repeat: 1 },
                           }
-                        : {}
+                          : {}
                     }
                   >
                     <img
