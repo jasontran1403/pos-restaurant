@@ -322,11 +322,13 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     }
 
     setCart((prev) => prev.filter((c) => c.id !== itemId));
+    toast.success("Đã xóa món khỏi giỏ hàng!");
   };
 
   /* ------------------ LONG-PRESS HANDLING ------------------ */
-  const startLongPress = (itemId) => {
+  const startLongPress = (itemId, e) => {
     if (!cartQtyMap[itemId] || longPressTimer.current) return; // Only start if item is in cart and no active timer
+    if (isMobile) e.preventDefault(); // Prevent native context menu on mobile
     longPressTimer.current = setTimeout(() => {
       setLongPressItemId(itemId);
       setIsLongPressActive(true);
@@ -335,7 +337,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
         setLongPressItemId(null);
         setIsLongPressActive(false);
       }, 300); // Clear animation after shake duration
-    }, 1000); // 1500ms for long-press
+    }, 1000); // 1000ms for long-press
   };
 
   const cancelLongPress = () => {
@@ -558,8 +560,9 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     onMouseDown={() => startLongPress(item.id)}
                     onMouseUp={cancelLongPress}
                     onMouseLeave={cancelLongPress}
-                    onTouchStart={() => startLongPress(item.id)}
+                    onTouchStart={(e) => startLongPress(item.id, e)}
                     onTouchEnd={cancelLongPress}
+                    onContextMenu={(e) => e.preventDefault()} // Prevent native context menu
                     animate={
                       focusedItem === item.id
                         ? {
