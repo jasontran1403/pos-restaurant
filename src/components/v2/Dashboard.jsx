@@ -24,6 +24,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   const [showCartPopup, setShowCartPopup] = useState(false);
   const [longPressItemId, setLongPressItemId] = useState(null); // Track long-press item
   const [isLongPressActive, setIsLongPressActive] = useState(false); // Track animation state
+  const [hasLongPressed, setHasLongPressed] = useState(false); // Track if long-press occurred
   const longPressTimer = useRef(null); // Timer for long-press
 
   /* ----- swipe ----- */
@@ -208,7 +209,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
+          className="h-6 Pesh w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -334,6 +335,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     longPressTimer.current = setTimeout(() => {
       setLongPressItemId(itemId);
       setIsLongPressActive(true);
+      setHasLongPressed(true); // Set flag to indicate long-press occurred
       handleRemove(itemId);
       setTimeout(() => {
         setLongPressItemId(null);
@@ -349,6 +351,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     }
     setLongPressItemId(null);
     setIsLongPressActive(false);
+    setTimeout(() => setHasLongPressed(false), 100); // Reset flag after a short delay
   };
 
   /* ------------------ CART ICON ANIMATION ------------------ */
@@ -485,15 +488,13 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                         ].map(([label, val, bold]) => (
                           <div
                             key={label}
-                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""
-                              }`}
+                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""}`}
                           >
                             <span className="flex-1 min-w-0 truncate pr-2 text-black">
                               {label}
                             </span>
                             <span
-                              className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-green-400" : "text-black"
-                                }`}
+                              className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-green-400" : "text-black"}`}
                             >
                               {formatCurrency(val)}
                             </span>
@@ -544,10 +545,11 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                 {filteredMenu.map((item) => (
                   <motion.div
                     key={item.id}
-                    className={`cursor-pointer relative no-select no-touch ${isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
-                      }`}
+                    className={`cursor-pointer relative no-select no-touch ${
+                      isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
+                    }`}
                     onClick={() => {
-                      if (longPressTimer.current) return; // Ngăn click trong khi nhấn giữ
+                      if (hasLongPressed) return; // Prevent adding to cart if long-press occurred
                       handleAdd(item);
                     }}
                     onMouseDown={() => startLongPress(item.id)}
@@ -560,15 +562,15 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     animate={
                       focusedItem === item.id
                         ? {
-                          y: [-10, 0, -5, 0],
-                          transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
-                        }
+                            y: [-10, 0, -5, 0],
+                            transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                          }
                         : isLongPressActive && longPressItemId === item.id
-                          ? {
+                        ? {
                             x: [-5, 5, -5, 5, 0],
                             transition: { duration: 0.3, repeat: 1 },
                           }
-                          : {}
+                        : {}
                     }
                   >
                     <img
