@@ -325,12 +325,15 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   };
 
   /* ------------------ LONG-PRESS HANDLING ------------------ */
+  const [clickDisabled, setClickDisabled] = useState(false);
+
   const startLongPress = (itemId, e) => {
-    if (!cartQtyMap[itemId] || longPressTimer.current) return; // Chỉ bắt đầu nếu mục trong giỏ và không có timer
+    if (!cartQtyMap[itemId] || longPressTimer.current) return;
     if (isMobile) {
-      e.preventDefault(); // Ngăn menu ngữ cảnh trên di động
-      e.stopPropagation(); // Ngăn sự kiện lan truyền
+      e.preventDefault();
+      e.stopPropagation();
     }
+    setClickDisabled(true); // Vô hiệu hóa click
     longPressTimer.current = setTimeout(() => {
       setLongPressItemId(itemId);
       setIsLongPressActive(true);
@@ -338,17 +341,24 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       setTimeout(() => {
         setLongPressItemId(null);
         setIsLongPressActive(false);
-      }, 300); // Xóa animation sau khi lắc
-    }, 1000); // 1000ms cho nhấn giữ
+        longPressTimer.current = null;
+        setClickDisabled(false); // Kích hoạt lại click sau khi hoàn tất
+      }, 300);
+    }, 1000);
   };
 
-  const cancelLongPress = () => {
+  const cancelLongPress = (e) => {
+    if (isMobile && e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
     setLongPressItemId(null);
     setIsLongPressActive(false);
+    setClickDisabled(false); // Kích hoạt lại click khi hủy
   };
 
   /* ------------------ CART ICON ANIMATION ------------------ */
@@ -547,7 +557,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     className={`cursor-pointer relative no-select no-touch ${isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
                       }`}
                     onClick={() => {
-                      if (longPressTimer.current) return; // Ngăn click trong khi nhấn giữ
+                      if (longPressTimer.current || isLongPressActive || clickDisabled) return; // Ngăn click sau khi nhấn giữ hoặc khi click bị vô hiệu hóa
                       handleAdd(item);
                     }}
                     onMouseDown={() => startLongPress(item.id)}
