@@ -9,7 +9,7 @@ import {
   DollarSign,    // Cash
   CreditCard     // Bank
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // Thêm Framer Motion
+import { motion, AnimatePresence } from "framer-motion";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,11 +18,10 @@ const PendingOrder = ({ handleTabClick }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [expandedOrder, setExpandedOrder] = useState(null); // State to track expanded order
-  const [orderDetails, setOrderDetails] = useState(null); // State to store fetched details
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false); // Loading state for details
+  const [expandedOrder, setExpandedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  /* ----------- Lấy dữ liệu ----------- */
   useEffect(() => {
     fetchOrders();
   }, [currentPage, searchTerm]);
@@ -30,7 +29,7 @@ const PendingOrder = ({ handleTabClick }) => {
   function fetchOrders() {
     Axios.get(`${API_ENDPOINT}shift/order-pending`, {
       params: {
-        page: currentPage - 1, // Spring Boot dùng page từ 0
+        page: currentPage - 1,
         size: ITEMS_PER_PAGE,
         shiftId: localStorage.getItem("shiftId"),
         search: searchTerm,
@@ -46,7 +45,6 @@ const PendingOrder = ({ handleTabClick }) => {
       .catch(console.error);
   }
 
-  /* ----------- Fetch Order Details ----------- */
   const fetchOrderDetails = (orderId) => {
     setIsLoadingDetails(true);
     Axios.get(`${API_ENDPOINT}shift/edit-bill/${orderId}`, {
@@ -68,10 +66,9 @@ const PendingOrder = ({ handleTabClick }) => {
       .finally(() => setIsLoadingDetails(false));
   };
 
-  /* ----------- Helpers ----------- */
   const formatNumber = (n) =>
     new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
       maximumFractionDigits: 4,
     }).format(parseFloat(n));
 
@@ -143,11 +140,9 @@ const PendingOrder = ({ handleTabClick }) => {
 
   const handleEdit = (orderId) => {
     localStorage.setItem("orderId", orderId);
-    // Chuyển sang tab Trading
     handleTabClick("Trading");
   };
 
-  /* ----------- Handle Expand/Collapse ----------- */
   const handleOrderClick = (orderId) => {
     if (expandedOrder === orderId) {
       setExpandedOrder(null);
@@ -158,7 +153,6 @@ const PendingOrder = ({ handleTabClick }) => {
     }
   };
 
-  // Animation variants
   const itemVariants = {
     hidden: { opacity: 0, y: -10 },
     visible: { opacity: 1, y: 0 },
@@ -193,7 +187,7 @@ const PendingOrder = ({ handleTabClick }) => {
         value={searchTerm}
         onChange={(e) => {
           setSearchTerm(e.target.value);
-          setCurrentPage(1); // reset page khi search
+          setCurrentPage(1);
         }}
         className="w-[95svw] sm:w-80 mx-auto block px-3 py-2 rounded-lg bg-white/20 backdrop-blur placeholder-white/70 text-white focus:outline-none"
       />
@@ -201,163 +195,181 @@ const PendingOrder = ({ handleTabClick }) => {
       {/* LIST */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {listOrders.map((order) => (
-          <motion.div
-            key={order.orderId}
-            className="w-[95svw] sm:w-full backdrop-blur-md bg-[#76807A80]/50
-                       rounded-2xl shadow-md p-4 grid grid-cols-3 items-center
-                       border border-white/10 cursor-pointer"
-            onClick={() => handleOrderClick(order.orderId)}
-            initial={{ scale: 1 }}
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            {/* TIME */}
-            <div className="text-left text-xs text-white/80 leading-tight">
-              <div>
-                {new Date(order.createdAt * 1000).toLocaleTimeString("vi-VN")}
-              </div>
-              <div>
-                {new Date(order.createdAt * 1000).toLocaleDateString("vi-VN", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "2-digit",
-                })}
-              </div>
-            </div>
+          <AnimatePresence key={order.orderId}>
+            {/* Only show the card if it's expanded or no card is expanded */}
+            {(!expandedOrder || expandedOrder === order.orderId) && (
+              <motion.div
+                className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-4 grid grid-cols-3 items-start
+                           border border-white/10 cursor-pointer
+                           ${expandedOrder === order.orderId ? "bg-[#76807A]/80 col-span-full" : "bg-[#76807A80]/50"}`}
+                onClick={() => handleOrderClick(order.orderId)}
+                initial={{ scale: 1 }}
+                animate={{ 
+                  scale: expandedOrder === order.orderId ? 1 : 1,
+                  width: expandedOrder === order.orderId ? "100%" : "auto"
+                }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                layout
+              >
+                {/* TIME */}
+                <div className="text-left text-xs text-white/80 leading-tight">
+                  <div>
+                    {new Date(order.createdAt * 1000).toLocaleTimeString("vi-VN")}
+                  </div>
+                  <div>
+                    {new Date(order.createdAt * 1000).toLocaleDateString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
+                    })}
+                  </div>
+                </div>
 
-            {/* CENTER */}
-            <div className="text-center">
-              <div className="text-lg font-semibold text-white">
-                Đơn #{order.orderId}
-              </div>
-              <div className="text-green-200 text-sm">
-                {formatNumber(order.totalAmount)} đ
-              </div>
-            </div>
+                {/* CENTER */}
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-white">
+                    Đơn #{order.orderId}
+                  </div>
+                  <div className="text-green-200 text-sm">
+                    {formatNumber(order.totalAmount)} đ
+                  </div>
+                </div>
 
-            {/* STATUS + TOGGLE */}
-            <div className="text-right flex flex-col items-end gap-2">
-              {/* Status */}
-              <span className="text-sm font-semibold bg-red-200 px-2 py-1 rounded text-green-600">
-                {order.status}
-              </span>
+                {/* STATUS + TOGGLE */}
+                <div className="text-right flex flex-col items-end gap-2">
+                  {/* Status */}
+                  <span className="text-sm font-semibold bg-red-200 px-2 py-1 rounded text-green-600">
+                    {order.status}
+                  </span>
 
-              {/* ICONS */}
-              <div className="flex gap-2 mt-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(order.orderId);
-                  }}
-                  className="text-white hover:text-yellow-400 transition"
-                  title="Chỉnh sửa"
-                >
-                  <Pencil size={18} />
-                </button>
+                  {/* ICONS */}
+                  <div className="flex gap-2 mt-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(order.orderId);
+                      }}
+                      className="text-white hover:text-yellow-400 transition"
+                      title="Chỉnh sửa"
+                    >
+                      <Pencil size={18} />
+                    </button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(order.orderId);
-                  }}
-                  className="text-white hover:text-red-500 transition"
-                  title="Xoá"
-                >
-                  <Trash2 size={18} />
-                </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(order.orderId);
+                      }}
+                      className="text-white hover:text-red-500 transition"
+                      title="Xoá"
+                    >
+                      <Trash2 size={18} />
+                    </button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleStatus(order.orderId, "CASH");
-                  }}
-                  className="text-white hover:text-green-300 transition"
-                  title="Chuyển về CASH"
-                >
-                  <DollarSign size={18} />
-                </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStatus(order.orderId, "CASH");
+                      }}
+                      className="text-white hover:text-green-300 transition"
+                      title="Chuyển về CASH"
+                    >
+                      <DollarSign size={18} />
+                    </button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleStatus(order.orderId, "BANK");
-                  }}
-                  className="text-white hover:text-blue-300 transition"
-                  title="Chuyển về BANK"
-                >
-                  <CreditCard size={18} />
-                </button>
-              </div>
-            </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStatus(order.orderId, "BANK");
+                      }}
+                      className="text-white hover:text-blue-300 transition"
+                      title="Chuyển về BANK"
+                    >
+                      <CreditCard size={18} />
+                    </button>
+                  </div>
+                </div>
 
-            {/* ORDER DETAILS (EXPANDABLE) */}
-            <AnimatePresence>
-              {expandedOrder === order.orderId && (
-                <motion.div
-                  className="col-span-3 mt-4 p-2 bg-white/10 rounded-lg overflow-hidden"
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  variants={containerVariants}
-                  transition={{ duration: 0.3 }}
-                >
-                  {isLoadingDetails ? (
-                    <div className="flex justify-center py-2">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                {/* ORDER DETAILS (EXPANDABLE) */}
+                {expandedOrder === order.orderId && (
+                  <motion.div
+                    className="col-span-3 mt-4 bg-white/10 rounded-lg overflow-hidden"
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={containerVariants}
+                    transition={{ duration: 0.3 }}
+                    layout
+                  >
+                    <div className="max-h-[40vh] overflow-y-auto p-2">
+                      {isLoadingDetails ? (
+                        <div className="flex justify-center py-2">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                        </div>
+                      ) : (
+                        <AnimatePresence>
+                          {orderDetails?.map((item) => (
+                            <motion.div
+                              key={item.id}
+                              className="flex justify-between items-center py-2 border-b border-white/5 last:border-b-0"
+                              variants={itemVariants}
+                              initial="hidden"
+                              animate="visible"
+                              exit="exit"
+                              layout
+                            >
+                              <span className="text-white">{item.name} × {item.qty}</span>
+                              <span className="text-green-200">
+                                {formatNumber(item.price * item.qty)} đ
+                              </span>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      )}
                     </div>
-                  ) : (
-                    orderDetails?.map((item) => (
-                      <motion.div
-                        key={item.id}
-                        className="flex justify-between items-center py-1 border-b border-white/5 last:border-b-0"
-                        variants={itemVariants}
-                      >
-                        <span className="text-white">{item.name} × {item.qty}</span>
-                        <span className="text-green-200">
-                          {formatNumber(item.price * item.qty)} đ
-                        </span>
-                      </motion.div>
-                    ))
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         ))}
       </div>
 
       {/* PAGINATION */}
-      <div className="flex justify-center items-center gap-2">
-        <button
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage((p) => p - 1)}
-          className="px-3 py-1 rounded bg-white/20 text-white disabled:opacity-30"
-        >
-          ‹ Prev
-        </button>
-
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      {!expandedOrder && (
+        <div className="flex justify-center items-center gap-2">
           <button
-            key={p}
-            onClick={() => setCurrentPage(p)}
-            className={`px-3 py-1 rounded ${
-              p === currentPage
-                ? "bg-white text-black font-semibold"
-                : "bg-white/20 text-white"
-            }`}
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className="px-3 py-1 rounded bg-white/20 text-white disabled:opacity-30"
           >
-            {p}
+            ‹ Prev
           </button>
-        ))}
 
-        <button
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage((p) => p + 1)}
-          className="px-3 py-1 rounded bg-white/20 text-white disabled:opacity-30"
-        >
-          Next ›
-        </button>
-      </div>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => setCurrentPage(p)}
+              className={`px-3 py-1 rounded ${
+                p === currentPage
+                  ? "bg-white text-black font-semibold"
+                  : "bg-white/20 text-white"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-3 py-1 rounded bg-white/20 text-white disabled:opacity-30"
+          >
+            Next ›
+          </button>
+        </div>
+      )}
     </div>
   );
 };

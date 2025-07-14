@@ -10,6 +10,7 @@ import { useMediaQuery } from "react-responsive";
 
 const Dashboard = ({ tradingItemView, enableShift }) => {
   const controls = useAnimation();
+  const cartControls = useAnimation();
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
   /* ------------------ STATE ------------------ */
@@ -20,7 +21,10 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [focusedItem, setFocusedItem] = useState(null);
-  const cartControls = useAnimation(); // For cart shake animation
+  const [showCartPopup, setShowCartPopup] = useState(false);
+  const [longPressItemId, setLongPressItemId] = useState(null); // Track long-press item
+  const [isLongPressActive, setIsLongPressActive] = useState(false); // Track animation state
+  const longPressTimer = useRef(null); // Timer for long-press
 
   /* ----- swipe ----- */
   const sliderRef = useRef(null);
@@ -154,13 +158,94 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     if (cart.length === 0) return;
     setCart([]);
     localStorage.removeItem("orderId");
+    setShowCartPopup(false);
   };
 
   const actionButtons = [
-    { text: "Bank", color: "bg-blue-600", onClick: handleBank },
-    { text: "Cash", color: "bg-yellow-600", onClick: handleCash },
-    { text: "Save", color: "bg-green-600", onClick: handleSave },
-    { text: "Cancel", color: "bg-orange-600", onClick: handleClearCart },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+          />
+        </svg>
+      ),
+      color: "bg-blue-600",
+      onClick: handleBank,
+      title: "Bank",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      ),
+      color: "bg-yellow-600",
+      onClick: handleCash,
+      title: "Cash",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 16v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2h2m3-4H9a2 2 0 00-2 2v7a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-1m-1 4l-3 3m0 0l-3-3m3 3V3"
+          />
+        </svg>
+      ),
+      color: "bg-green-600",
+      onClick: handleSave,
+      title: "Save",
+    },
+    {
+      icon: (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          />
+        </svg>
+      ),
+      color: "bg-orange-600",
+      onClick: handleClearCart,
+      title: "Clear",
+    },
   ];
 
   /* ------------------ CART ACTIONS ------------------ */
@@ -193,11 +278,11 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       return;
     }
 
-    setCart(prev => prev.map(item =>
-      item.id === itemId
-        ? { ...item, qty: item.qty + 1 }
-        : item
-    ));
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, qty: item.qty + 1 } : item
+      )
+    );
   };
 
   const handleDecrease = (itemId) => {
@@ -206,15 +291,13 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       return;
     }
 
-    setCart(prev => {
-      const existingItem = prev.find(item => item.id === itemId);
+    setCart((prev) => {
+      const existingItem = prev.find((item) => item.id === itemId);
       if (existingItem.qty <= 1) {
-        return prev.filter(item => item.id !== itemId);
+        return prev.filter((item) => item.id !== itemId);
       }
-      return prev.map(item =>
-        item.id === itemId
-          ? { ...item, qty: item.qty - 1 }
-          : item
+      return prev.map((item) =>
+        item.id === itemId ? { ...item, qty: item.qty - 1 } : item
       );
     });
   };
@@ -241,20 +324,55 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     setCart((prev) => prev.filter((c) => c.id !== itemId));
   };
 
-  const scrollToBottom = () => {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  /* ------------------ LONG-PRESS HANDLING ------------------ */
+  const startLongPress = (itemId) => {
+    if (!cartQtyMap[itemId] || longPressTimer.current) return; // Only start if item is in cart and no active timer
+    longPressTimer.current = setTimeout(() => {
+      setLongPressItemId(itemId);
+      setIsLongPressActive(true);
+      handleRemove(itemId);
+      setTimeout(() => {
+        setLongPressItemId(null);
+        setIsLongPressActive(false);
+      }, 300); // Clear animation after shake duration
+    }, 1000); // 1500ms for long-press
   };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    setLongPressItemId(null);
+    setIsLongPressActive(false);
+  };
+
+  /* ------------------ CART ICON ANIMATION ------------------ */
+  useEffect(() => {
+    cartControls.start({
+      top: window.innerHeight - 100, // Always position 100px above the bottom
+      transition: { type: "spring", stiffness: 300, damping: 20 },
+    });
+  }, [cartControls]);
 
   /* ------------------ RENDER ------------------ */
   return (
     <div className="animation-fadeIn relative">
-      {/* Cart Button with Glassmorphism and Badge Overlay */}
-      {/* <motion.div
-        className="fixed top-52 right-4 z-10"
+      {/* Draggable Cart Button with Glassmorphism and Badge Overlay */}
+      <motion.div
+        className="fixed right-4 z-[1000]" // Highest z-index to ensure it's on top
         animate={cartControls}
+        drag
+        dragMomentum={false}
+        dragConstraints={{
+          left: -window.innerWidth + 60,
+          right: 0,
+          top: showCartPopup ? window.innerHeight - 100 : 0, // Allow dragging to top when popup is closed
+          bottom: showCartPopup ? window.innerHeight - 100 : window.innerHeight - 100,
+        }}
       >
         <button
-          onClick={scrollToBottom}
+          onClick={() => setShowCartPopup(!showCartPopup)}
           className="bg-white/10 backdrop-blur-md text-white rounded-full flex items-center gap-2 p-2 relative"
         >
           <svg
@@ -279,37 +397,143 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
             {cart.reduce((sum, item) => sum + item.qty, 0)}
           </motion.span>
         </button>
-      </motion.div> */}
+      </motion.div>
+
+      {/* Cart Popup */}
+      {showCartPopup && (
+        <motion.div
+          className="fixed max-h-[70svh] mt-[140px] inset-0 bg-black/50 flex items-center justify-center z-40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="p-3 bg-white/90 backdrop-blur-md rounded-xl max-w-lg w-full mx-2 h-full overflow-y-auto flex flex-col"
+            initial={{ scale: 0.8, y: 50 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.8, y: 50 }}
+          >
+            <button
+              className="float-right text-black hover:text-gray-600 text-2xl mb-2"
+              onClick={() => setShowCartPopup(false)}
+            >
+              ✕
+            </button>
+            {cart.length === 0 ? (
+              <p
+                className="text-sm text-center text-black italic flex-grow"
+                onClick={() => setShowCartPopup(false)}
+              >
+                Chưa có món.
+              </p>
+            ) : (
+              <div className="flex flex-col flex-grow">
+                <div className="flex-grow max-h-[40vh] overflow-y-auto">
+                  <motion.ul layout className="flex flex-col gap-3">
+                    {cart.map((c, index) => (
+                      <React.Fragment key={c.id}>
+                        <motion.li
+                          initial={{ opacity: 0, x: 30 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -30 }}
+                          className="flex justify-between items-center pb-3 border-b border-black/10 last:border-b-0"
+                        >
+                          <span className="break-words max-w-[30%] text-[14px] text-black">
+                            {c.name} × {c.qty}
+                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-green-400 text-[14px]">
+                              {formatCurrency(c.qty * c.price)}
+                            </span>
+                            <button
+                              onClick={() => handleDecrease(c.id)}
+                              className="text-sm bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded"
+                            >
+                              -
+                            </button>
+                            <button
+                              onClick={() => handleIncrease(c.id)}
+                              className="text-sm bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded"
+                            >
+                              +
+                            </button>
+                            <button
+                              onClick={() => handleRemove(c.id)}
+                              className="text-sm bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                            >
+                              x
+                            </button>
+                          </div>
+                        </motion.li>
+                        {index < cart.length - 1 && (
+                          <hr className="border-t border-black/10" />
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </motion.ul>
+                </div>
+                <div className="border-t border-black/10 pt-4 mt-4">
+                  {(() => {
+                    const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
+                    const vat = subtotal * 0.1;
+                    const total = subtotal + vat;
+
+                    return (
+                      <>
+                        {[
+                          ["Tạm tính:", subtotal],
+                          ["VAT 10%:", vat],
+                          ["Tổng cộng:", total, true],
+                        ].map(([label, val, bold]) => (
+                          <div
+                            key={label}
+                            className={`flex items-center w-full min-w-0 justify-between ${
+                              bold ? "font-semibold" : ""
+                            }`}
+                          >
+                            <span className="flex-1 min-w-0 truncate pr-2 text-black">
+                              {label}
+                            </span>
+                            <span
+                              className={`flex-shrink-0 whitespace-nowrap ${
+                                bold ? "text-green-400" : "text-black"
+                              }`}
+                            >
+                              {formatCurrency(val)}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="w-full flex justify-center gap-4 mt-4 flex-wrap">
+                          {actionButtons.map(({ icon, color, onClick, title }) => (
+                            <button
+                              key={title}
+                              className={`w-12 h-12 ${color} hover:brightness-110 text-white rounded-full flex items-center justify-center`}
+                              onClick={onClick}
+                              title={title}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
 
       {!loading && (
-        <div className="flex flex-col gap-4 w-[95svw] mx-auto pb-[50px]">
-          {/* search */}
-          <div className="relative w-full mb-4">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm món…"
-              className="w-full px-3 py-2 pr-9 rounded bg-white/10 text-white border border-white/20 focus:outline-none"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
+        <div className="flex flex-col gap-4 w-[95svw] mx-auto mt-4">
           {/* slider */}
           <motion.div
             ref={sliderRef}
             className="overflow-hidden"
             style={{
-              height: isMobile ? 'fit-content' : 'fit-content',
-              overflowY: 'hidden'
+              height: isMobile ? "fit-content" : "fit-content",
+              overflowY: isMobile ? "auto" : "hidden",
             }}
           >
             <motion.div
@@ -324,24 +548,48 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                 {filteredMenu.map((item) => (
                   <motion.div
                     key={item.id}
-                    onClick={() => handleAdd(item)}
-                    className={`cursor-pointer relative ${focusedItem === item.id ? '' : ''}`}
-                    animate={focusedItem === item.id ? { y: [-10, 0, -5, 0], transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] } } : {}}
+                    className={`cursor-pointer relative ${
+                      isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
+                    }`}
+                    onClick={() => {
+                      if (longPressTimer.current) return; // Prevent click during long-press
+                      handleAdd(item);
+                    }}
+                    onMouseDown={() => startLongPress(item.id)}
+                    onMouseUp={cancelLongPress}
+                    onMouseLeave={cancelLongPress}
+                    onTouchStart={() => startLongPress(item.id)}
+                    onTouchEnd={cancelLongPress}
+                    animate={
+                      focusedItem === item.id
+                        ? {
+                            y: [-10, 0, -5, 0],
+                            transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                          }
+                        : isLongPressActive && longPressItemId === item.id
+                        ? {
+                            x: [-5, 5, -5, 5, 0],
+                            transition: { duration: 0.3, repeat: 1 },
+                          }
+                        : {}
+                    }
                   >
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-[80px] object-cover rounded-lg"
                     />
-                    <p className="text-center text-black-400 text-[14px]">{item.name}</p>
+                    <p className="text-center text-white text-[10px] font-bold">
+                      {item.name}
+                    </p>
                     {item.type > 0 && item.type <= 100 ? (
                       <div className="text-center">
-                        <p className="text-green-400 text-[12px]">
+                        <p className="text-green-400 text-[8px]">
                           {formatCurrency(getDiscountedPrice(item))}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-center text-green-400 text-[12px]">
+                      <p className="text-center text-green-400 text-[8px]">
                         {formatCurrency(item.price)}
                       </p>
                     )}
@@ -361,95 +609,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
               </div>
             </motion.div>
           </motion.div>
-
-          {/* cart panel */}
-          <div className="p-4 mt-6 bg-white/5 backdrop-blur-md rounded-xl">
-            {cart.length === 0 ? (
-              <p className="text-sm text-gray-400 italic">Chưa có món.</p>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* list */}
-                <div>
-                  <motion.ul layout className="flex flex-col gap-3">
-                    {cart.map((c) => (
-                      <motion.li
-                        key={c.id}
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -30 }}
-                        className="flex justify-between items-center"
-                      >
-                        <span className="break-words max-w-[65%]">
-                          {c.name} × {c.qty}
-                        </span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-green-400">{formatCurrency(c.qty * c.price)}</span>
-                          <button
-                            onClick={() => handleDecrease(c.id)}
-                            className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
-                          >
-                            -
-                          </button>
-                          <button
-                            onClick={() => handleIncrease(c.id)}
-                            className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded"
-                          >
-                            +
-                          </button>
-                          <button
-                            onClick={() => handleRemove(c.id)}
-                            className="text-sm bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
-                          >
-                            x
-                          </button>
-                        </div>
-                      </motion.li>
-                    ))}
-                  </motion.ul>
-                </div>
-
-                <div className="flex flex-col gap-3 border-t border-white/10 pt-6 md:border-t-0 md:pt-0 md:border-l md:pl-6 w-full min-w-0">
-                  {(() => {
-                    const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
-                    const vat = subtotal * 0.1;
-                    const total = subtotal + vat;
-
-                    return (
-                      <>
-                        {[
-                          ["Tạm tính:", subtotal],
-                          ["VAT 10%:", vat],
-                          ["Tổng cộng:", total, true],
-                        ].map(([label, val, bold]) => (
-                          <div
-                            key={label}
-                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""}`}
-                          >
-                            <span className="flex-1 min-w-0 truncate pr-2">{label}</span>
-                            <span className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-green-400" : ""}`}>
-                              {formatCurrency(val)}
-                            </span>
-                          </div>
-                        ))}
-
-                        <div className="w-full flex justify-center gap-4 mt-6 flex-wrap">
-                          {actionButtons.map(({ text, color, onClick }) => (
-                            <button
-                              key={text}
-                              className={`w-24 px-3 py-2 ${color} hover:brightness-110 text-white rounded`}
-                              onClick={onClick}
-                            >
-                              {text}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>

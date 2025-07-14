@@ -84,7 +84,7 @@ const Home = () => {
       const day = String(now.getDate()).padStart(2, "0");
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const year = now.getFullYear();
-      setCurrentTime(`${hours}:${minutes}:${seconds} ${day}/${month}/${year}`);
+      setCurrentTime(`${hours}:${minutes}:${seconds} ${day}/${month}`);
     };
 
     updateTime();
@@ -403,61 +403,62 @@ const Home = () => {
         <div className="info-container">
           {isConnected && (
             <div className="info-wallet">
-              <div className="balance-info pb-[10px] pt-[10px]">
-                <div className="usdt">
-                  <span className="text-[16px] italic">
-                    Staff: {displayName}
+              <div className="balance-info pb-[10px] pt-[10px] flex items-center justify-between">
+                {/* LEFT TEXT */}
+                <div className="usdt text-left">
+                  <span className="text-[14px] italic leading-tight">
+                    {displayName}
                     <br />
                     {currentTime}
                   </span>
                 </div>
-                <div className="relative flex flex-row gap-1 h-[40px]">
+
+                {/* RIGHT BUTTONS */}
+                <div className="relative flex flex-row gap-2 h-[48px]">
                   <button
                     onClick={handleOpenShift}
-                    className="flex items-center gap-2 px-3 py-1 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition"
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition text-[15px]"
                   >
-                    <LogOut size={14} />
+                    <LogOut size={20} />
                   </button>
 
                   <button
                     onClick={handleDisconnect}
                     disabled={!canLogout}
-                    className={`flex items-center gap-2 px-3 py-1 rounded-md transition ${
-                      canLogout
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${canLogout
                         ? "bg-red-500 text-white hover:bg-red-600"
                         : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
-                    <LogOut size={14} />
+                    <LogOut size={20} />
                   </button>
 
                   <button
-                    className={`flex items-center gap-2 px-3 py-1 rounded-md transition ${
-                      isEnabled
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${isEnabled
                         ? "bg-green-500 text-white hover:bg-green-600"
                         : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                    }`}
+                      }`}
                     disabled={!isEnabled}
                     onClick={() => setShowCashModal(true)}
                   >
-                    <DollarSign size={14} />
+                    <DollarSign size={20} />
                   </button>
 
                   <button
-                    className={`flex items-center gap-2 px-3 py-1 rounded-md transition ${
-                      isEnabled
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${isEnabled
                         ? "bg-blue-500 text-white hover:bg-blue-600"
                         : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                    }`}
+                      }`}
                     disabled={!isEnabled}
                     onClick={() => setShowStockModal(true)}
                   >
-                    <LineChart size={14} />
+                    <LineChart size={20} />
                   </button>
                 </div>
               </div>
+
               {selectedDasTab === "Trading" && (
-                <div className="animation-fadeIn transaction-btn">
+                <div className="animation-fadeIn transaction-btn mt-4">
                   <button
                     className={tradingItemView === 1 ? "glow" : ""}
                     onClick={() => changeShowViewTrading(1)}
@@ -497,7 +498,7 @@ const Home = () => {
         )}
 
         {selectedDasTab === "Account" && <Account />}
-        
+
         <div className="cover">
           <SubNav
             listNav={listDasNav}
@@ -665,9 +666,8 @@ const Home = () => {
               <button
                 onClick={handleForceCloseShift}
                 disabled={!note.trim()}
-                className={`px-4 py-2 rounded ${
-                  !note.trim() ? "bg-gray-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600 text-white"
-                }`}
+                className={`px-4 py-2 rounded ${!note.trim() ? "bg-gray-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600 text-white"
+                  }`}
               >
                 Xác nhận đóng ca
               </button>
@@ -710,11 +710,10 @@ const Home = () => {
               <button
                 onClick={handleCheckStock}
                 disabled={menuItems.length === 0}
-                className={`px-4 py-2 rounded ${
-                  menuItems.length === 0
+                className={`px-4 py-2 rounded ${menuItems.length === 0
                     ? "bg-gray-300 cursor-not-allowed"
                     : "bg-green-500 hover:bg-green-600 text-white"
-                }`}
+                  }`}
               >
                 Xác nhận kiểm kho
               </button>
