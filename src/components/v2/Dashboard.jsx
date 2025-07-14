@@ -326,8 +326,11 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
 
   /* ------------------ LONG-PRESS HANDLING ------------------ */
   const startLongPress = (itemId, e) => {
-    if (!cartQtyMap[itemId] || longPressTimer.current) return; // Only start if item is in cart and no active timer
-    if (isMobile) e.preventDefault(); // Prevent native context menu on mobile
+    if (!cartQtyMap[itemId] || longPressTimer.current) return; // Chỉ bắt đầu nếu mục trong giỏ và không có timer
+    if (isMobile) {
+      e.preventDefault(); // Ngăn menu ngữ cảnh trên di động
+      e.stopPropagation(); // Ngăn sự kiện lan truyền
+    }
     longPressTimer.current = setTimeout(() => {
       setLongPressItemId(itemId);
       setIsLongPressActive(true);
@@ -335,8 +338,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       setTimeout(() => {
         setLongPressItemId(null);
         setIsLongPressActive(false);
-      }, 300); // Clear animation after shake duration
-    }, 1000); // 1000ms for long-press
+      }, 300); // Xóa animation sau khi lắc
+    }, 1000); // 1000ms cho nhấn giữ
   };
 
   const cancelLongPress = () => {
@@ -541,10 +544,10 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                 {filteredMenu.map((item) => (
                   <motion.div
                     key={item.id}
-                    className={`cursor-pointer relative ${isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
+                    className={`cursor-pointer relative no-select no-touch ${isLongPressActive && longPressItemId === item.id ? "border-2 border-red-500" : ""
                       }`}
                     onClick={() => {
-                      if (longPressTimer.current) return; // Prevent click during long-press
+                      if (longPressTimer.current) return; // Ngăn click trong khi nhấn giữ
                       handleAdd(item);
                     }}
                     onMouseDown={() => startLongPress(item.id)}
@@ -552,7 +555,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     onMouseLeave={cancelLongPress}
                     onTouchStart={(e) => startLongPress(item.id, e)}
                     onTouchEnd={cancelLongPress}
-                    onContextMenu={(e) => e.preventDefault()} // Prevent native context menu
+                    onContextMenu={(e) => e.preventDefault()} // Ngăn menu ngữ cảnh
+                    onTouchMove={(e) => e.preventDefault()} // Ngăn các hành vi cảm ứng khác
                     animate={
                       focusedItem === item.id
                         ? {
@@ -570,26 +574,29 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-[80px] object-cover rounded-lg no-touch-callout pointer-events-none"
-                      onContextMenu={(e) => e.preventDefault()}    // chặn Android Chrome
+                      className="w-full h-[80px] object-cover rounded-lg no-select no-touch pointer-events-none"
+                      onContextMenu={(e) => e.preventDefault()} // Ngăn menu ngữ cảnh
+                      onTouchStart={(e) => e.preventDefault()} // Ngăn hành vi mặc định trên di động
+                      onTouchMove={(e) => e.preventDefault()} // Ngăn các hành vi cảm ứng khác
+                      draggable={false} // Ngăn kéo thả ảnh
                     />
-                    <p className="text-center text-white text-[10px] font-bold">
+                    <p className="text-center text-white text-[10px] font-bold no-select no-touch">
                       {item.name}
                     </p>
                     {item.type > 0 && item.type <= 100 ? (
-                      <div className="text-center">
-                        <p className="text-green-400 text-[8px]">
+                      <div className="text-center no-select no-touch">
+                        <p className="text-green-400 text-[8px] no-select no-touch">
                           {formatCurrency(getDiscountedPrice(item))}
                         </p>
                       </div>
                     ) : (
-                      <p className="text-center text-green-400 text-[8px]">
+                      <p className="text-center text-green-400 text-[8px] no-select no-touch">
                         {formatCurrency(item.price)}
                       </p>
                     )}
                     {cartQtyMap[item.id] > 0 && (
                       <motion.span
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs no-select no-touch"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         exit={{ scale: 0 }}

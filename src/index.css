@@ -172,6 +172,19 @@ input[type="number"] {
   -webkit-user-drag: none;       /* Ngăn "Lưu ảnh" / drag ảnh */
 }
 
+/* Trong tệp CSS của bạn (ví dụ: App.css hoặc styles.css) */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.no-touch {
+  -webkit-touch-callout: none;
+  touch-action: none;
+}
+
 .transaction-btn button:hover {
 }
 
