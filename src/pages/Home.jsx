@@ -154,7 +154,6 @@ const Home = () => {
       return;
     }
 
-    // Create stockItems array with productId, quantityStocks, and quantityPackages
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
       quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
@@ -278,6 +277,22 @@ const Home = () => {
     if (!workerId || isNaN(parseInt(workerId))) {
       toast.error("ID nhân viên không hợp lệ. Vui lòng đăng nhập lại.");
       setShowOpenShiftModal(false);
+      return;
+    }
+
+    // Validate Cash tab
+    const hasCashInput = Object.values(cashInputs).some((value) => value > 0);
+    if (!hasCashInput) {
+      toast.error("Vui lòng nhập số tiền mặt trước khi mở ca.");
+      return;
+    }
+
+    // Validate Stocks tab
+    const hasStockInput = menuItems.some((item) =>
+      stockQuantities[item.id]?.quantityStocks > 0 || stockQuantities[item.id]?.quantityPackages > 0
+    );
+    if (!hasStockInput) {
+      toast.error("Vui lòng nhập số lượng kho trước khi mở ca.");
       return;
     }
 
@@ -542,7 +557,6 @@ const Home = () => {
         </div>
       </>
 
-      {/* Open Shift Modal */}
       {/* Open Shift Modal */}
       {showOpenShiftModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 mt-[40px]">
