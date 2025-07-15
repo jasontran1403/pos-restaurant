@@ -44,6 +44,7 @@ const Home = () => {
     500000: 0,
     bankTransfer: 0,
   });
+  const [activeTab, setActiveTab] = useState("Cash");
 
   const handleInputChange = (e, key) => {
     const val = parseInt(e.target.value) || 0;
@@ -72,6 +73,9 @@ const Home = () => {
   useEffect(() => {
     if (localStorage.getItem("displayName")) {
       setDisplayName(localStorage.getItem("displayName"));
+    }
+    if (localStorage.getItem("isFirstShift") === "true") {
+      setShowOpenShiftModal(true);
     }
   }, []);
 
@@ -102,6 +106,7 @@ const Home = () => {
     localStorage.removeItem("displayName");
     localStorage.removeItem("shiftId");
     localStorage.removeItem("workerId");
+    localStorage.removeItem("isFirstShift");
     window.location.href = "/";
   };
 
@@ -113,7 +118,7 @@ const Home = () => {
         setMenuItems(res.data);
         const initialQuantities = {};
         res.data.forEach((item) => {
-          initialQuantities[item.id] = 0;
+          initialQuantities[item.id] = { quantityStocks: 0, quantityPackages: 0 };
         });
         setStockQuantities(initialQuantities);
       })
@@ -127,10 +132,13 @@ const Home = () => {
     fetchMenuItems();
   }, []);
 
-  const handleStockQuantityChange = (itemId, value) => {
+  const handleStockQuantityChange = (itemId, field, value) => {
     setStockQuantities((prev) => ({
       ...prev,
-      [itemId]: parseInt(value) || 0,
+      [itemId]: {
+        ...prev[itemId],
+        [field]: parseInt(value) || 0,
+      },
     }));
   };
 
@@ -146,9 +154,11 @@ const Home = () => {
       return;
     }
 
+    // Create stockItems array with productId, quantityStocks, and quantityPackages
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
-      quantity: parseInt(stockQuantities[item.id] || 0),
+      quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
+      quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
     }));
 
     const data = {
@@ -173,7 +183,14 @@ const Home = () => {
             timerProgressBar: true,
           });
         } else {
-          toast.error(response.data.message || "Kiểm kho thất bại");
+          Swal.fire({
+            title: response.data,
+            timer: 3000,
+            showConfirmButton: false,
+            timerProgressBar: true,
+          });
+          setShowStockModal(false);
+          setIsCheckStock(true);
         }
       })
       .catch((error) => {
@@ -265,16 +282,24 @@ const Home = () => {
     }
 
     const totalAmount = calculateTotal();
-    console.log("Sending open shift request with data:", {
-      workerId: parseInt(workerId),
-      totalAmount,
-      note,
-    });
+    const stockItems = menuItems.map((item) => ({
+      productId: parseInt(item.id),
+      quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
+      quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
+    }));
 
-    let data = JSON.stringify({
+    const cashDetails = Object.keys(cashInputs)
+      .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
+      .map((key) => ({
+        denomination: parseInt(key),
+        quantity: parseInt(cashInputs[key]),
+      }));
+
+    const data = JSON.stringify({
       workerId: parseInt(workerId),
       totalAmount,
-      note,
+      stocks: { items: stockItems },
+      cashDetails,
     });
 
     let config = {
@@ -290,9 +315,10 @@ const Home = () => {
     Axios.request(config)
       .then((response) => {
         console.log("Open shift response:", response.data);
-        if (response.data.message === "Bắt đầu ca mới thành công.") {
-          toast.success("Bắt đầu ca mới thành công.");
+        if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công.") {
+          toast.success("Bắt đầu ca mới và nhập kho thành công.");
           localStorage.setItem("shiftId", response.data.shiftId);
+          localStorage.setItem("isFirstShift", false);
           setIsEnabled(true);
           setIsCheckCash(false);
           setIsCheckStock(false);
@@ -310,14 +336,14 @@ const Home = () => {
             500000: 0,
             bankTransfer: 0,
           });
-          setNote("");
+          setStockQuantities({});
         } else {
-          toast.error(response.data.message || "Mở ca thất bại");
+          toast.error(response.data || "Mở ca thất bại");
         }
       })
       .catch((error) => {
         console.error("Open shift error:", error.response?.data);
-        toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi mở ca làm việc");
+        toast.error(error.response?.data || "Đã xảy ra lỗi khi mở ca làm việc");
       });
   };
 
@@ -330,7 +356,8 @@ const Home = () => {
 
     setShowCashModal(false);
     let data = JSON.stringify({
-      totalAmount: calculateTotal(),
+      totalAmount: calculateTotal() - cashInputs.bankTransfer,
+      amountBank: cashInputs.bankTransfer,
       note: note,
     });
 
@@ -439,7 +466,10 @@ const Home = () => {
                       : "bg-gray-400 text-gray-200 cursor-not-allowed"
                       }`}
                     disabled={!isEnabled}
-                    onClick={() => setShowCashModal(true)}
+                    onClick={() => {
+                      setShowCashModal(true);
+                      setShowStockModal(false);
+                    }}
                   >
                     <DollarSign size={20} />
                   </button>
@@ -450,7 +480,10 @@ const Home = () => {
                       : "bg-gray-400 text-gray-200 cursor-not-allowed"
                       }`}
                     disabled={!isEnabled}
-                    onClick={() => setShowStockModal(true)}
+                    onClick={() => {
+                      setShowStockModal(true);
+                      setShowCashModal(false);
+                    }}
                   >
                     <LineChart size={20} />
                   </button>
@@ -510,44 +543,88 @@ const Home = () => {
       </>
 
       {/* Open Shift Modal */}
+      {/* Open Shift Modal */}
       {showOpenShiftModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 mt-[40px]">
           <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
-            <h2 className="text-xl font-semibold mb-2 text-center">Nhập số tiền đầu ca</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
-                <div key={denom} className="flex items-center justify-between">
-                  <label>{denom.toLocaleString()}đ</label>
-                  <input
-                    type="number"
-                    className="border rounded px-2 py-1 w-20"
-                    value={cashInputs[denom]}
-                    onChange={(e) => handleInputChange(e, denom)}
-                  />
+            <h2 className="text-xl font-semibold mb-2 text-center">Mở ca làm việc</h2>
+            {/* Tab Navigation */}
+            <div className="flex border-b">
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Cash")}
+              >
+                Tiền mặt
+              </button>
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Stocks")}
+              >
+                Kho
+              </button>
+            </div>
+            {/* Tab Content */}
+            {activeTab === "Cash" && (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
+                  <div key={denom} className="flex items-center justify-between">
+                    <label>{denom.toLocaleString()}đ</label>
+                    <input
+                      type="number"
+                      className="border rounded px-2 py-1 w-20"
+                      value={cashInputs[denom]}
+                      onChange={(e) => handleInputChange(e, denom)}
+                    />
+                  </div>
+                ))}
+                <div className="col-span-2 text-center mt-4 text-lg font-bold">
+                  Tổng tiền: {calculateTotal().toLocaleString()} đ
                 </div>
-              ))}
-              <div className="col-span-2 flex items-center justify-between mt-2">
-                <label>Chuyển khoản</label>
-                <input
-                  type="number"
-                  className="border rounded px-2 py-1 w-32"
-                  value={cashInputs.bankTransfer}
-                  onChange={(e) => handleInputChange(e, "bankTransfer")}
-                />
               </div>
-              <div className="col-span-2 flex items-center justify-between mt-2">
-                <label>Ghi chú</label>
-                <input
-                  type="text"
-                  className="border rounded px-2 py-1 w-32"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
+            )}
+            {activeTab === "Stocks" && (
+              <div className="max-h-[30svh] overflow-y-auto">
+                {menuItems.length === 0 ? (
+                  <p className="text-center text-gray-500">Không có sản phẩm để nhập kho.</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {menuItems.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-2">
+                        <span className="flex-1 text-[12px]">{item.name}</span>
+                        <div className="flex gap-2">
+                          <div>
+                            <label className="text-[12px] mr-1">Bịch</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={stockQuantities[item.id]?.quantityStocks || 0}
+                              onChange={(e) => handleStockQuantityChange(item.id, "quantityStocks", e.target.value)}
+                              className="w-16 border rounded px-2 py-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[12px] mr-1">Đơn vị</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={stockQuantities[item.id]?.quantityPackages || 0}
+                              onChange={(e) => handleStockQuantityChange(item.id, "quantityPackages", e.target.value)}
+                              className="w-16 border rounded px-2 py-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="text-center mt-4 text-lg font-bold">
-              Tổng tiền: {calculateTotal().toLocaleString()} đ
-            </div>
+            )}
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => {
@@ -565,7 +642,7 @@ const Home = () => {
                     500000: 0,
                     bankTransfer: 0,
                   });
-                  setNote("");
+                  setStockQuantities({});
                 }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >
@@ -586,7 +663,6 @@ const Home = () => {
       {showCashModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
           <div className="bg-white rounded-xl p-3 w-[90%] max-w-md shadow-xl space-y-4 relative">
-            <h2 className="text-xl font-semibold mb-2 text-center">Nhập số tiền</h2>
             <div className="grid grid-cols-2 gap-3 text-sm">
               {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
                 <div key={denom} className="flex items-center justify-between">
@@ -679,8 +755,7 @@ const Home = () => {
       {/* Stock Modal */}
       {showStockModal && (
         <div className="fixed inset-0 flex items-start justify-center z-50 mt-[120px]">
-          <div className="bg-white rounded-xl p-2 w-[90%] max-w-2xl shadow-xl
-                    flex flex-col h-[60svh] overflow-hidden">
+          <div className="bg-white rounded-xl p-2 w-[90%] max-w-2xl shadow-xl flex flex-col h-[55svh] overflow-hidden">
             {/* LIST */}
             {menuItems.length === 0 ? (
               <p className="text-center text-gray-500 flex-1 flex items-center justify-center">
@@ -690,18 +765,30 @@ const Home = () => {
               <div className="flex-1 max-h-[42svh] overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {menuItems.map((item) => (
-                    <div key={item.id}
-                      className="flex items-center justify-between p-2 border-b">
+                    <div key={item.id} className="flex items-center justify-between p-2 border-b gap-2">
                       <span className="flex-1">{item.name}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={stockQuantities[item.id] || 0}
-                        onChange={(e) =>
-                          handleStockQuantityChange(item.id, e.target.value)
-                        }
-                        className="w-20 border rounded px-2 py-1"
-                      />
+                      <div className="flex gap-2">
+                        <div>
+                          <label className="text-xs">Bịch</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={stockQuantities[item.id]?.quantityStocks || 0}
+                            onChange={(e) => handleStockQuantityChange(item.id, "quantityStocks", e.target.value)}
+                            className="w-16 border rounded px-2 py-1"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs">Đơn vị</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={stockQuantities[item.id]?.quantityPackages || 0}
+                            onChange={(e) => handleStockQuantityChange(item.id, "quantityPackages", e.target.value)}
+                            className="w-16 border rounded px-2 py-1"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -712,16 +799,16 @@ const Home = () => {
             <div className="flex justify-between pt-10">
               <button
                 onClick={() => setShowStockModal(false)}
-                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">
+                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+              >
                 Hủy
               </button>
               <button
                 onClick={handleCheckStock}
                 disabled={menuItems.length === 0}
-                className={`px-4 py-2 rounded ${menuItems.length === 0
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}>
+                className={`px-4 py-2 rounded ${menuItems.length === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600 text-white"
+                  }`}
+              >
                 Xác nhận kiểm kho
               </button>
             </div>

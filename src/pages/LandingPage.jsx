@@ -27,10 +27,10 @@ const LandingPage = () => {
 
     Axios.request(config)
       .then((response) => {
-        console.log(response.data);
         if (response.data.status === 200) {
           localStorage.setItem("workerId", response.data.workerId);
           localStorage.setItem("displayName", response.data.message);
+          localStorage.setItem("isFirstShift", response.data.firstShift);
           window.location.href = "/home";
         } else {
           toast.error(response.data.message || "Đăng nhập thất bại. Vui lòng thử lại.");

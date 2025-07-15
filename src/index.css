@@ -606,6 +606,13 @@ small {
   justify-content: center;
   align-items: center;
 }
+
+.swal2-title {
+  font-size: 16px!important;
+  font-weight: bold;
+  color: rgb(255, 244, 224);
+  padding: 20px;
+}
   
 .eft {
   display: flex;
