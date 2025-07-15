@@ -479,7 +479,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   /* ------------------ CART ICON ANIMATION ------------------ */
   useEffect(() => {
     cartControls.start({
-      top: window.innerHeight - 100, // Always position 100px above the bottom
+      top: window.innerHeight - 150, // Always position 100px above the bottom
       transition: { type: "spring", stiffness: 300, damping: 20 },
     });
   }, [cartControls]);
@@ -523,13 +523,13 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       {/* Cart Popup */}
       {showCartPopup && (
         <motion.div
-          className="fixed max-h-[65svh] mt-[120px] inset-0 bg-black/50 flex items-center justify-center z-40"
+          className="fixed max-h-[65svh] mt-[120px] inset-0 flex items-center justify-center z-40"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="p-2 bg-white/80 backdrop-blur-md rounded-xl max-w-lg w-full mx-2 h-full overflow-y-auto flex flex-col"
+            className="p-2 bg-white/95 backdrop-blur-md rounded-xl max-w-lg w-full mx-2 h-full overflow-y-auto flex flex-col"
             initial={{ scale: 0.8, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.8, y: 50 }}
@@ -602,17 +602,15 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                         ].map(([label, val, bold]) => (
                           <div
                             key={label}
-                            className={`flex items-center w-full min-w-0 justify-between ${
-                              bold ? "font-semibold" : ""
-                            }`}
+                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""
+                              }`}
                           >
                             <span className="flex-1 min-w-0 truncate pr-2 text-black">
                               {label}
                             </span>
                             <span
-                              className={`flex-shrink-0 whitespace-nowrap ${
-                                bold ? "text-black" : "text-black"
-                              }`}
+                              className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-black" : "text-black"
+                                }`}
                             >
                               {formatCurrency(val)}
                             </span>
@@ -664,9 +662,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                   <motion.div
                     key={item.id}
                     ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item
-                    className={`cursor-pointer relative no-select ${
-                      isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""
-                    }`}
+                    className={`cursor-pointer relative no-select ${isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""
+                      }`}
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent click event bubbling
                       if (longPressedItemId === String(item.id)) {
@@ -681,15 +678,15 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                     animate={
                       focusedItem === item.id
                         ? {
-                            y: [-10, 0, -5, 0],
-                            transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
-                          }
+                          y: [-10, 0, -5, 0],
+                          transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                        }
                         : isLongPressActive && longPressItemId === String(item.id)
-                        ? {
+                          ? {
                             x: [-5, 5, -5, 5, 0],
                             transition: { duration: 0.3, repeat: 1 },
                           }
-                        : {}
+                          : {}
                     }
                   >
                     <img

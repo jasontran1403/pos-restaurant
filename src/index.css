@@ -154,22 +154,31 @@ input[type="number"] {
 }
 
 .scrollbar-hide {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 /* src/index.css hoặc tailwind.css */
 .no-touch-callout {
-  -webkit-touch-callout: none;   /* iOS & Chrome iOS */
-  -webkit-user-select: none;     /* Safari */
-  -moz-user-select: none;        /* Firefox */
-  -ms-user-select: none;         /* Edge/IE */
-  user-select: none;             /* Standard */
-  -webkit-user-drag: none;       /* Ngăn "Lưu ảnh" / drag ảnh */
+  -webkit-touch-callout: none;
+  /* iOS & Chrome iOS */
+  -webkit-user-select: none;
+  /* Safari */
+  -moz-user-select: none;
+  /* Firefox */
+  -ms-user-select: none;
+  /* Edge/IE */
+  user-select: none;
+  /* Standard */
+  -webkit-user-drag: none;
+  /* Ngăn "Lưu ảnh" / drag ảnh */
 }
 
 /* Trong tệp CSS của bạn (ví dụ: App.css hoặc styles.css) */
@@ -185,8 +194,7 @@ input[type="number"] {
   touch-action: none;
 }
 
-.transaction-btn button:hover {
-}
+.transaction-btn button:hover {}
 
 .transaction-btn button.glow {
   box-shadow: 0 0 10px 5px #083158;
@@ -454,20 +462,25 @@ select:focus {
 .cover-2 {
   position: sticky;
   top: 0;
-  width: 100svw;           /* full viewport width */
+  width: 100svw;
+  /* full viewport width */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 999999;
 
-  background-color: transparent;             /* ở Top = trong suốt */
-  transition: background-color 0.25s ease;   /* mượt mà khi đổi màu */
+  background-color: transparent;
+  /* ở Top = trong suốt */
+  transition: background-color 0.25s ease;
+  /* mượt mà khi đổi màu */
 }
 
 /* thêm class .scrolled bằng JS */
 .cover-2.scrolled {
-  background-color: rgba(0, 0, 0, 0.55);     /* xám/đen mờ che nội dung */
-  backdrop-filter: blur(6px);                /* tuỳ chọn: làm mờ phía dưới */
+  background-color: rgba(0, 0, 0, 0.55);
+  /* xám/đen mờ che nội dung */
+  backdrop-filter: blur(6px);
+  /* tuỳ chọn: làm mờ phía dưới */
 }
 
 
@@ -482,6 +495,7 @@ select:focus {
   border-top-right-radius: 40px;
   z-index: 9999999;
 }
+
 /* Hiệu ứng nền mờ */
 .notifination {
   cursor: pointer;
@@ -490,7 +504,8 @@ select:focus {
   left: 0;
   width: 100vw;
   height: 100svh;
-  background: rgba(0, 0, 0, 0.4); /* Mờ nền */
+  background: rgba(0, 0, 0, 0.4);
+  /* Mờ nền */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -549,6 +564,7 @@ select:focus {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -592,8 +608,14 @@ select:focus {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%; 
+  width: 100%;
   height: 100%;
+}
+
+input:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+  outline: none;
 }
 
 small {
@@ -608,12 +630,12 @@ small {
 }
 
 .swal2-title {
-  font-size: 16px!important;
+  font-size: 16px !important;
   font-weight: bold;
   color: rgb(255, 244, 224);
   padding: 20px;
 }
-  
+
 .eft {
   display: flex;
   flex-direction: column;
@@ -1033,8 +1055,10 @@ input[type="password"] {
 
 @media (max-width: 768px) {
   .market-details {
-    flex-direction: column; /* Chuyển thành flex-column trên màn hình nhỏ */
-    align-items: flex-start; /* Đảm bảo các phần tử nằm gọn về bên trái */
+    flex-direction: column;
+    /* Chuyển thành flex-column trên màn hình nhỏ */
+    align-items: flex-start;
+    /* Đảm bảo các phần tử nằm gọn về bên trái */
     padding: 10px;
   }
 
@@ -1096,10 +1120,13 @@ input[type="password"] {
   padding: 20px;
   margin-top: 20px;
   min-height: 40svh;
-  position: relative; /* Thêm vào để .spinner-transaction có thể căn giữa chính xác */
+  position: relative;
+  /* Thêm vào để .spinner-transaction có thể căn giữa chính xác */
   display: flex;
-  justify-content: center; /* Căn giữa ngang */
-  align-items: center; /* Căn giữa dọc */
+  justify-content: center;
+  /* Căn giữa ngang */
+  align-items: center;
+  /* Căn giữa dọc */
 }
 
 .stake-container {
@@ -2334,7 +2361,8 @@ select {
   position: fixed;
   top: 1%;
   left: 50%;
-  transform: translateX(-50%); /* Simplified centering */
+  transform: translateX(-50%);
+  /* Simplified centering */
   width: 90svw;
   min-height: 100px;
   z-index: 999999;
@@ -2428,7 +2456,7 @@ select {
     padding: 0 2.6rem;
   }
 
-  
+
 }
 
 .place-ticket button {
@@ -2534,10 +2562,10 @@ select {
   .tooltip {
     display: none;
   }
-  
+
   .tv-lightweight-charts {
-    width: 100%!important;
-    height: 100%!important;
+    width: 100% !important;
+    height: 100% !important;
   }
 }
 
@@ -2678,7 +2706,7 @@ select {
     font-size: 24px;
     min-width: 196px;
   }
-  
+
 }
 
 /******************************************************************************/
@@ -2737,10 +2765,13 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Chat bot  */
 .chatbox-container {
-  position: fixed; /* Hoặc absolute nếu cần */
-  bottom: 80px; /* Điều chỉnh vị trí */
+  position: fixed;
+  /* Hoặc absolute nếu cần */
+  bottom: 80px;
+  /* Điều chỉnh vị trí */
   right: 20px;
-  z-index: 9999; /* Đảm bảo nó hiển thị trên cùng */
+  z-index: 9999;
+  /* Đảm bảo nó hiển thị trên cùng */
 }
 
 .chatbox-icon {

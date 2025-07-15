@@ -31,6 +31,16 @@ const Home = () => {
   const [showStockModal, setShowStockModal] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
   const [stockQuantities, setStockQuantities] = useState({});
+  const [inputTouched, setInputTouched] = useState({
+    cash: {},
+    stocks: {}
+  });
+
+  const [inputFocus, setInputFocus] = useState({
+    cash: {},
+    stocks: {}
+  });
+
   const [cashInputs, setCashInputs] = useState({
     500: 0,
     1000: 0,
@@ -47,8 +57,39 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState("Cash");
 
   const handleInputChange = (e, key) => {
-    const val = parseInt(e.target.value) || 0;
+    const value = e.target.value;
+
+    // Nếu giá trị bắt đầu bằng 0 và có nhiều hơn 1 ký tự, bỏ số 0 đầu tiên
+    const processedValue = value.startsWith('0') && value.length > 1
+      ? value.substring(1)
+      : value;
+
+    const val = parseInt(processedValue) || 0;
     setCashInputs((prev) => ({ ...prev, [key]: val }));
+  };
+
+  const handleStockQuantityChange = (itemId, field, value) => {
+    setStockQuantities((prev) => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        [field]: value, // Trực tiếp sử dụng giá trị số
+      },
+    }));
+  };
+
+  const handleInputFocus = (type, key) => {
+    setInputFocus(prev => ({
+      ...prev,
+      [type]: { ...prev[type], [key]: true }
+    }));
+  };
+
+  const handleInputBlur = (type, key) => {
+    setInputFocus(prev => ({
+      ...prev,
+      [type]: { ...prev[type], [key]: false }
+    }));
   };
 
   const calculateTotal = () => {
@@ -78,6 +119,16 @@ const Home = () => {
       setShowOpenShiftModal(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (showStockModal) {
+      // Reset trạng thái focus khi mở modal
+      setInputFocus(prev => ({
+        ...prev,
+        stocks: {}
+      }));
+    }
+  }, [showStockModal]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -131,16 +182,6 @@ const Home = () => {
   useEffect(() => {
     fetchMenuItems();
   }, []);
-
-  const handleStockQuantityChange = (itemId, field, value) => {
-    setStockQuantities((prev) => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        [field]: parseInt(value) || 0,
-      },
-    }));
-  };
 
   const handleCheckStock = () => {
     const shiftId = localStorage.getItem("shiftId");
@@ -547,7 +588,7 @@ const Home = () => {
 
         {selectedDasTab === "Account" && <Account />}
 
-        <div className="cover">
+        <div className="cover mb-2">
           <SubNav
             listNav={listDasNav}
             selectedTab={selectedDasTab}
@@ -559,15 +600,15 @@ const Home = () => {
 
       {/* Open Shift Modal */}
       {showOpenShiftModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 mt-[40px]">
+        <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
           <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
             <h2 className="text-xl font-semibold mb-2 text-center">Mở ca làm việc</h2>
             {/* Tab Navigation */}
             <div className="flex border-b">
               <button
                 className={`flex-1 py-2 text-center ${activeTab === "Cash"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
                   }`}
                 onClick={() => setActiveTab("Cash")}
               >
@@ -575,8 +616,8 @@ const Home = () => {
               </button>
               <button
                 className={`flex-1 py-2 text-center ${activeTab === "Stocks"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
                   }`}
                 onClick={() => setActiveTab("Stocks")}
               >
@@ -592,8 +633,10 @@ const Home = () => {
                     <input
                       type="number"
                       className="border rounded px-2 py-1 w-20"
-                      value={cashInputs[denom]}
+                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? '' : cashInputs[denom]}
                       onChange={(e) => handleInputChange(e, denom)}
+                      onFocus={() => handleInputFocus('cash', denom)}
+                      onBlur={() => handleInputBlur('cash', denom)}
                     />
                   </div>
                 ))}
@@ -617,9 +660,31 @@ const Home = () => {
                             <input
                               type="number"
                               min="0"
-                              value={stockQuantities[item.id]?.quantityStocks || 0}
-                              onChange={(e) => handleStockQuantityChange(item.id, "quantityStocks", e.target.value)}
+                              value={
+                                stockQuantities[item.id]?.quantityStocks === 0 &&
+                                  inputFocus.stocks[`${item.id}-quantityStocks`]
+                                  ? ""
+                                  : stockQuantities[item.id]?.quantityStocks || 0
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Loại bỏ số 0 ở đầu
+                                const processedValue =
+                                  value.startsWith("0") && value.length > 1
+                                    ? value.substring(1)
+                                    : value;
+                                const parsedValue = processedValue === "" ? 0 : parseInt(processedValue) || 0;
+                                handleStockQuantityChange(item.id, "quantityStocks", parsedValue);
+                              }}
                               className="w-16 border rounded px-2 py-1"
+                              onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
+                              onBlur={() => {
+                                handleInputBlur("stocks", `${item.id}-quantityStocks`);
+                                // Đảm bảo giá trị là 0 nếu input rỗng
+                                if (!stockQuantities[item.id]?.quantityStocks) {
+                                  handleStockQuantityChange(item.id, "quantityStocks", 0);
+                                }
+                              }}
                             />
                           </div>
                           <div>
@@ -627,9 +692,31 @@ const Home = () => {
                             <input
                               type="number"
                               min="0"
-                              value={stockQuantities[item.id]?.quantityPackages || 0}
-                              onChange={(e) => handleStockQuantityChange(item.id, "quantityPackages", e.target.value)}
+                              value={
+                                stockQuantities[item.id]?.quantityPackages === 0 &&
+                                  inputFocus.stocks[`${item.id}-quantityPackages`]
+                                  ? ""
+                                  : stockQuantities[item.id]?.quantityPackages || 0
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // Loại bỏ số 0 ở đầu
+                                const processedValue =
+                                  value.startsWith("0") && value.length > 1
+                                    ? value.substring(1)
+                                    : value;
+                                const parsedValue = processedValue === "" ? 0 : parseInt(processedValue) || 0;
+                                handleStockQuantityChange(item.id, "quantityPackages", parsedValue);
+                              }}
                               className="w-16 border rounded px-2 py-1"
+                              onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
+                              onBlur={() => {
+                                handleInputBlur("stocks", `${item.id}-quantityPackages`);
+                                // Đảm bảo giá trị là 0 nếu input rỗng
+                                if (!stockQuantities[item.id]?.quantityPackages) {
+                                  handleStockQuantityChange(item.id, "quantityPackages", 0);
+                                }
+                              }}
                             />
                           </div>
                         </div>
@@ -684,8 +771,10 @@ const Home = () => {
                   <input
                     type="number"
                     className="border rounded px-2 py-1 w-20"
-                    value={cashInputs[denom]}
+                    value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? '' : cashInputs[denom]}
                     onChange={(e) => handleInputChange(e, denom)}
+                    onFocus={() => handleInputFocus('cash', denom)}
+                    onBlur={() => handleInputBlur('cash', denom)}
                   />
                 </div>
               ))}
@@ -787,9 +876,13 @@ const Home = () => {
                           <input
                             type="number"
                             min="0"
-                            value={stockQuantities[item.id]?.quantityStocks || 0}
+                            value={inputFocus.stocks[`${item.id}-quantityStocks`] && stockQuantities[item.id]?.quantityStocks === 0
+                              ? ''
+                              : stockQuantities[item.id]?.quantityStocks || 0}
                             onChange={(e) => handleStockQuantityChange(item.id, "quantityStocks", e.target.value)}
                             className="w-16 border rounded px-2 py-1"
+                            onFocus={() => handleInputFocus('stocks', `${item.id}-quantityStocks`)}
+                            onBlur={() => handleInputBlur('stocks', `${item.id}-quantityStocks`)}
                           />
                         </div>
                         <div>
@@ -797,9 +890,13 @@ const Home = () => {
                           <input
                             type="number"
                             min="0"
-                            value={stockQuantities[item.id]?.quantityPackages || 0}
+                            value={inputFocus.stocks[`${item.id}-quantityPackages`] && stockQuantities[item.id]?.quantityPackages === 0
+                              ? ''
+                              : stockQuantities[item.id]?.quantityPackages || 0}
                             onChange={(e) => handleStockQuantityChange(item.id, "quantityPackages", e.target.value)}
                             className="w-16 border rounded px-2 py-1"
+                            onFocus={() => handleInputFocus('stocks', `${item.id}-quantityPackages`)}
+                            onBlur={() => handleInputBlur('stocks', `${item.id}-quantityPackages`)}
                           />
                         </div>
                       </div>

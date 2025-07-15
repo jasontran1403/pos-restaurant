@@ -539,7 +539,7 @@ const CompleteOrder = () => {
             />
           </svg>
         </button>
-        <button
+        {/* <button
           onClick={isShiftIdValid ? () => { setModalType("destroy"); setIsModalOpen(true); } : undefined}
           className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${!isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-red-200 transition-colors"}`}
           title={isShiftIdValid ? "Xóa kho" : "Yêu cầu shiftId để xóa kho"}
@@ -559,7 +559,7 @@ const CompleteOrder = () => {
               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
             />
           </svg>
-        </button>
+        </button> */}
       </motion.div>
     </div>
   );
