@@ -491,14 +491,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       <motion.div
         className="fixed right-4 z-[1000]"
         animate={cartControls}
-        drag
-        dragMomentum={false}
-        dragConstraints={{
-          left: -window.innerWidth + 60,
-          right: 0,
-          top: showCartPopup ? window.innerHeight - 100 : 0,
-          bottom: showCartPopup ? window.innerHeight - 100 : window.innerHeight - 100,
-        }}
       >
         <button
           onClick={() => setShowCartPopup(!showCartPopup)}
