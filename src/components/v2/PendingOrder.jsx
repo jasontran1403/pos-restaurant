@@ -345,7 +345,7 @@ const PendingOrder = ({ handleTabClick }) => {
             onClick={() => setCurrentPage((p) => p - 1)}
             className="px-3 py-1 rounded bg-white/20 text-white disabled:opacity-30"
           >
-            ‹ Prev
+            ‹
           </button>
 
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -366,7 +366,7 @@ const PendingOrder = ({ handleTabClick }) => {
             onClick={() => setCurrentPage((p) => p + 1)}
             className="px-3 py-1 rounded bg-white/20 text-white disabled:opacity-30"
           >
-            Next ›
+            ›
           </button>
         </div>
       )}
