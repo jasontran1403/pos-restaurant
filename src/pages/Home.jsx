@@ -110,13 +110,6 @@ const Home = () => {
     if (localStorage.getItem("displayName")) {
       setDisplayName(localStorage.getItem("displayName"));
     }
-    if (localStorage.getItem("shiftId")) {
-      setIsEnabled(true);
-    } else if (localStorage.getItem("isFirstShift") === "true") {
-      setShowOpenShiftModal(true);
-    } else {
-      setShowInitialStockModal(true);
-    }
   }, []);
 
   useEffect(() => {
@@ -142,6 +135,10 @@ const Home = () => {
   }, [showErrorModal]);
 
   const performLogout = () => {
+    if (isEnabled) {
+      toast.error("Đang trong ca, không thể thoát khi chưa đóng ca.");
+      return;
+    }
     localStorage.removeItem("displayName");
     localStorage.removeItem("shiftId");
     localStorage.removeItem("workerId");
@@ -209,16 +206,15 @@ const Home = () => {
           setIsCheckCash(true);
           setIsCheckStock(true);
           setShowCloseShiftModal(false);
+          setIsEnabled(false);
+          localStorage.removeItem("shiftId");
+          localStorage.removeItem("isFirstShift");
           Swal.fire({
             title: "Kết ca thành công",
             icon: "success",
             timer: 3000,
             showConfirmButton: false,
             timerProgressBar: true,
-          }).then(() => {
-            // Thực hiện sau khi Swal biến mất
-            localStorage.clear();
-            window.location.href = "/";
           });
         } else {
           Swal.fire({
@@ -256,7 +252,10 @@ const Home = () => {
     })
       .then(() => {
         setShowErrorModal(false);
-        performLogout();
+        setIsEnabled(false);
+        localStorage.removeItem("shiftId");
+        localStorage.removeItem("isFirstShift");
+        toast.success("Đã đóng ca thành công");
       })
       .catch((error) => {
         console.error(error);
@@ -283,7 +282,10 @@ const Home = () => {
     Axios.request(config)
       .then((response) => {
         if (response.data === "Đã hoàn thành ca.") {
-          performLogout();
+          setIsEnabled(false);
+          localStorage.removeItem("shiftId");
+          localStorage.removeItem("isFirstShift");
+          toast.success("Đã đóng ca thành công");
         } else {
           setErrorMessage(response.data || "Chưa hoàn tất việc kiểm kho hoặc kiểm tiền.");
           setShowCloseShiftModal(true);
@@ -363,8 +365,8 @@ const Home = () => {
 
     Axios.request(config)
       .then((response) => {
-        if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công.") {
-          toast.success("Bắt đầu ca mới và nhập kho thành công.");
+        if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công." || response.data.message === "") {
+          toast.success("Đã bắt đầu ca");
           localStorage.setItem("shiftId", response.data.shiftId);
           localStorage.setItem("isFirstShift", false);
           localStorage.setItem("displayName", response.data.fullName);
@@ -408,6 +410,11 @@ const Home = () => {
     const hasCashInput = Object.values(cashInputs).some((value) => value > 0);
     if (!hasCashInput) {
       toast.error("Vui lòng nhập số tiền mặt trước khi mở ca.");
+      return;
+    }
+
+    if (fullName === "") {
+      toast.error("Vui lòng nhập tên nhân viên.");
       return;
     }
 
@@ -519,17 +526,32 @@ const Home = () => {
                   </span>
                 </div>
                 <div className="relative flex flex-row gap-2 h-[48px]">
+                  {!isEnabled ? (
+                    <button
+                      onClick={handleOpenShift}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition text-[15px]"
+                    >
+                      Mở ca
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleDisconnect}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition text-[15px]"
+                    >
+                      Đóng ca
+                    </button>
+                  )}
                   <button
-                    onClick={handleOpenShift}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition text-[15px]"
+                    onClick={performLogout}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-[15px] ${
+                      isEnabled
+                        ? "bg-gray-300 text-gray-500"
+                        : "bg-green-500 text-white hover:bg-green-600"
+                    }`}
+                    title={isEnabled ? "Đang trong ca, không thể thoát khi chưa đóng ca." : "Đăng xuất"}
                   >
                     <LogOut size={20} />
-                  </button>
-                  <button
-                    onClick={handleDisconnect}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition text-[15px]"
-                  >
-                    <LogOut size={20} />
+                    Thoát
                   </button>
                 </div>
               </div>
@@ -590,19 +612,21 @@ const Home = () => {
             <h2 className="text-xl font-semibold mb-2 text-center">Mở ca làm việc</h2>
             <div className="flex border-b">
               <button
-                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                className={`flex-1 py-2 text-center ${
+                  activeTab === "Cash"
                     ? "border-b-2 border-green-500 font-semibold text-black"
                     : "text-gray-600 hover:text-black"
-                  }`}
+                }`}
                 onClick={() => setActiveTab("Cash")}
               >
                 Tiền mặt
               </button>
               <button
-                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                className={`flex-1 py-2 text-center ${
+                  activeTab === "Stocks"
                     ? "border-b-2 border-green-500 font-semibold text-black"
                     : "text-gray-600 hover:text-black"
-                  }`}
+                }`}
                 onClick={() => setActiveTab("Stocks")}
               >
                 Kho
@@ -610,19 +634,21 @@ const Home = () => {
             </div>
             {activeTab === "Cash" && (
               <div className="grid grid-cols-2 gap-3 text-sm">
-                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
-                  <div key={denom} className="flex items-center justify-between">
-                    <label>{denom.toLocaleString()}đ</label>
-                    <input
-                      type="number"
-                      className="border rounded px-2 py-1 w-20"
-                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
-                      onChange={(e) => handleInputChange(e, denom)}
-                      onFocus={() => handleInputFocus("cash", denom)}
-                      onBlur={() => handleInputBlur("cash", denom)}
-                    />
-                  </div>
-                ))}
+                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map(
+                  (denom) => (
+                    <div key={denom} className="flex items-center justify-between">
+                      <label>{denom.toLocaleString()}đ</label>
+                      <input
+                        type="number"
+                        className="border rounded px-2 py-1 w-20"
+                        value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
+                        onChange={(e) => handleInputChange(e, denom)}
+                        onFocus={() => handleInputFocus("cash", denom)}
+                        onBlur={() => handleInputBlur("cash", denom)}
+                      />
+                    </div>
+                  )
+                )}
                 <div className="col-span-2 text-center mt-1 text-lg font-bold">
                   <label>Tên nhân viên</label>
                   <input
@@ -660,7 +686,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityStocks === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityStocks`]
+                                  inputFocus.stocks[`${item.id}-quantityStocks`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityStocks || 0
                                 }
@@ -684,7 +710,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityPackages === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityPackages`]
+                                  inputFocus.stocks[`${item.id}-quantityPackages`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityPackages || 0
                                 }
@@ -749,19 +775,21 @@ const Home = () => {
             <h2 className="text-xl font-semibold mb-2 text-center">Nhập kho đầu ca</h2>
             <div className="flex border-b">
               <button
-                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                className={`flex-1 py-2 text-center ${
+                  activeTab === "Cash"
                     ? "border-b-2 border-green-500 font-semibold text-black"
                     : "text-gray-600 hover:text-black"
-                  }`}
+                }`}
                 onClick={() => setActiveTab("Cash")}
               >
                 Tiền mặt
               </button>
               <button
-                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                className={`flex-1 py-2 text-center ${
+                  activeTab === "Stocks"
                     ? "border-b-2 border-green-500 font-semibold text-black"
                     : "text-gray-600 hover:text-black"
-                  }`}
+                }`}
                 onClick={() => setActiveTab("Stocks")}
               >
                 Kho
@@ -769,19 +797,21 @@ const Home = () => {
             </div>
             {activeTab === "Cash" && (
               <div className="grid grid-cols-2 gap-3 text-sm">
-                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
-                  <div key={denom} className="flex items-center justify-between">
-                    <label>{denom.toLocaleString()}đ</label>
-                    <input
-                      type="number"
-                      className="border rounded px-2 py-1 w-20"
-                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
-                      onChange={(e) => handleInputChange(e, denom)}
-                      onFocus={() => handleInputFocus("cash", denom)}
-                      onBlur={() => handleInputBlur("cash", denom)}
-                    />
-                  </div>
-                ))}
+                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map(
+                  (denom) => (
+                    <div key={denom} className="flex items-center justify-between">
+                      <label>{denom.toLocaleString()}đ</label>
+                      <input
+                        type="number"
+                        className="border rounded px-2 py-1 w-20"
+                        value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
+                        onChange={(e) => handleInputChange(e, denom)}
+                        onFocus={() => handleInputFocus("cash", denom)}
+                        onBlur={() => handleInputBlur("cash", denom)}
+                      />
+                    </div>
+                  )
+                )}
                 <div className="col-span-2 text-center mt-1 text-lg font-bold">
                   <label>Tên nhân viên</label>
                   <input
@@ -819,7 +849,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityStocks === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityStocks`]
+                                  inputFocus.stocks[`${item.id}-quantityStocks`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityStocks || 0
                                 }
@@ -843,7 +873,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityPackages === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityPackages`]
+                                  inputFocus.stocks[`${item.id}-quantityPackages`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityPackages || 0
                                 }
@@ -908,19 +938,21 @@ const Home = () => {
             <h2 className="text-xl font-semibold mb-2 text-center">Kết ca</h2>
             <div className="flex border-b">
               <button
-                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                className={`flex-1 py-2 text-center ${
+                  activeTab === "Cash"
                     ? "border-b-2 border-green-500 font-semibold text-black"
                     : "text-gray-600 hover:text-black"
-                  }`}
+                }`}
                 onClick={() => setActiveTab("Cash")}
               >
                 Check Tiền
               </button>
               <button
-                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                className={`flex-1 py-2 text-center ${
+                  activeTab === "Stocks"
                     ? "border-b-2 border-green-500 font-semibold text-black"
                     : "text-gray-600 hover:text-black"
-                  }`}
+                }`}
                 onClick={() => setActiveTab("Stocks")}
               >
                 Check Kho
@@ -928,19 +960,21 @@ const Home = () => {
             </div>
             {activeTab === "Cash" && (
               <div className="grid grid-cols-2 gap-3 text-sm">
-                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
-                  <div key={denom} className="flex items-center justify-between">
-                    <label>{denom.toLocaleString()}đ</label>
-                    <input
-                      type="number"
-                      className="border rounded px-2 py-1 w-20"
-                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
-                      onChange={(e) => handleInputChange(e, denom)}
-                      onFocus={() => handleInputFocus("cash", denom)}
-                      onBlur={() => handleInputBlur("cash", denom)}
-                    />
-                  </div>
-                ))}
+                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map(
+                  (denom) => (
+                    <div key={denom} className="flex items-center justify-between">
+                      <label>{denom.toLocaleString()}đ</label>
+                      <input
+                        type="number"
+                        className="border rounded px-2 py-1 w-20"
+                        value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
+                        onChange={(e) => handleInputChange(e, denom)}
+                        onFocus={() => handleInputFocus("cash", denom)}
+                        onBlur={() => handleInputBlur("cash", denom)}
+                      />
+                    </div>
+                  )
+                )}
                 <div className="col-span-2 flex items-center justify-between mt-2">
                   <label>Chuyển khoản</label>
                   <input
@@ -987,7 +1021,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityStocks === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityStocks`]
+                                  inputFocus.stocks[`${item.id}-quantityStocks`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityStocks || 0
                                 }
@@ -1011,7 +1045,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityPackages === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityPackages`]
+                                  inputFocus.stocks[`${item.id}-quantityPackages`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityPackages || 0
                                 }
@@ -1097,8 +1131,9 @@ const Home = () => {
               <button
                 onClick={handleForceCloseShift}
                 disabled={!note.trim()}
-                className={`px-4 py-2 rounded ${!note.trim() ? "bg-gray-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600 text-white"
-                  }`}
+                className={`px-4 py-2 rounded ${
+                  !note.trim() ? "bg-gray-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600 text-white"
+                }`}
               >
                 Xác nhận đóng ca
               </button>
