@@ -12,7 +12,7 @@ import { WalletContext } from "../components/WalletContext";
 import { API_ENDPOINT } from "../constants";
 import Swal from "sweetalert2/dist/sweetalert2.js";
 import "sweetalert2/src/sweetalert2.scss";
-import { LogOut, DollarSign, LineChart } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 const listDasNav = ["Trading", "Balance", "Account"];
 
@@ -20,27 +20,25 @@ const Home = () => {
   const { multiTabDetect } = useContext(MultiTabDetectContext);
   const { isConnected } = useContext(WalletContext);
 
-  const [showCashModal, setShowCashModal] = useState(false);
+  const [showCloseShiftModal, setShowCloseShiftModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showOpenShiftModal, setShowOpenShiftModal] = useState(false);
+  const [showInitialStockModal, setShowInitialStockModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [note, setNote] = useState("");
   const noteInputRef = useRef(null);
   const [isCheckCash, setIsCheckCash] = useState(false);
   const [isCheckStock, setIsCheckStock] = useState(false);
-  const [showStockModal, setShowStockModal] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
   const [stockQuantities, setStockQuantities] = useState({});
   const [inputTouched, setInputTouched] = useState({
     cash: {},
-    stocks: {}
+    stocks: {},
   });
-
   const [inputFocus, setInputFocus] = useState({
     cash: {},
-    stocks: {}
+    stocks: {},
   });
-
   const [cashInputs, setCashInputs] = useState({
     500: 0,
     1000: 0,
@@ -55,40 +53,44 @@ const Home = () => {
     bankTransfer: 0,
   });
   const [activeTab, setActiveTab] = useState("Cash");
+  const [loading, setLoading] = useState(false);
+  const [selectedDasTab, setSelectedDasTab] = useState("Trading");
+  const [fullName, setFullName] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [tradingItemView, setTradingItemView] = useState(1);
+  const [currentTime, setCurrentTime] = useState("");
+  const [isEnabled, setIsEnabled] = useState(localStorage.getItem("shiftId") ? true : false);
 
   const handleInputChange = (e, key) => {
     const value = e.target.value;
-
-    // Nếu giá trị bắt đầu bằng 0 và có nhiều hơn 1 ký tự, bỏ số 0 đầu tiên
-    const processedValue = value.startsWith('0') && value.length > 1
-      ? value.substring(1)
-      : value;
-
+    const processedValue = value.startsWith("0") && value.length > 1 ? value.substring(1) : value;
     const val = parseInt(processedValue) || 0;
     setCashInputs((prev) => ({ ...prev, [key]: val }));
   };
 
   const handleStockQuantityChange = (itemId, field, value) => {
+    const processedValue = value.startsWith("0") && value.length > 1 ? value.substring(1) : value;
+    const parsedValue = processedValue === "" ? 0 : parseInt(processedValue) || 0;
     setStockQuantities((prev) => ({
       ...prev,
       [itemId]: {
         ...prev[itemId],
-        [field]: value, // Trực tiếp sử dụng giá trị số
+        [field]: parsedValue,
       },
     }));
   };
 
   const handleInputFocus = (type, key) => {
-    setInputFocus(prev => ({
+    setInputFocus((prev) => ({
       ...prev,
-      [type]: { ...prev[type], [key]: true }
+      [type]: { ...prev[type], [key]: true },
     }));
   };
 
   const handleInputBlur = (type, key) => {
-    setInputFocus(prev => ({
+    setInputFocus((prev) => ({
       ...prev,
-      [type]: { ...prev[type], [key]: false }
+      [type]: { ...prev[type], [key]: false },
     }));
   };
 
@@ -104,32 +106,18 @@ const Home = () => {
     return total;
   };
 
-  const [loading, setLoading] = useState(false);
-  const [selectedDasTab, setSelectedDasTab] = useState("Trading");
-  const [fullName, setFullName] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [tradingItemView, setTradingItemView] = useState(1);
-  const [currentTime, setCurrentTime] = useState("");
-  const [isEnabled, setIsEnabled] = useState(localStorage.getItem("shiftId") ? true : false);
-
   useEffect(() => {
     if (localStorage.getItem("displayName")) {
       setDisplayName(localStorage.getItem("displayName"));
     }
-    if (localStorage.getItem("isFirstShift") === "true") {
+    if (localStorage.getItem("shiftId")) {
+      setIsEnabled(true);
+    } else if (localStorage.getItem("isFirstShift") === "true") {
       setShowOpenShiftModal(true);
+    } else {
+      setShowInitialStockModal(true);
     }
   }, []);
-
-  useEffect(() => {
-    if (showStockModal) {
-      // Reset trạng thái focus khi mở modal
-      setInputFocus(prev => ({
-        ...prev,
-        stocks: {}
-      }));
-    }
-  }, [showStockModal]);
 
   useEffect(() => {
     const updateTime = () => {
@@ -139,7 +127,6 @@ const Home = () => {
       const seconds = String(now.getSeconds()).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
       const month = String(now.getMonth() + 1).padStart(2, "0");
-      const year = now.getFullYear();
       setCurrentTime(`${hours}:${minutes}:${seconds} ${day}/${month}`);
     };
 
@@ -184,79 +171,89 @@ const Home = () => {
     fetchMenuItems();
   }, []);
 
-  const handleCheckStock = () => {
+  const handleCheckCashAndStock = () => {
     const shiftId = localStorage.getItem("shiftId");
     if (!shiftId || isNaN(parseInt(shiftId))) {
-      toast.error("Ca làm việc không hợp lệ. Vui lòng mở ca trước khi kiểm kho.");
-      return;
-    }
-
-    if (menuItems.length === 0) {
-      toast.error("Không có sản phẩm để kiểm kho.");
+      toast.error("Ca làm việc không hợp lệ. Vui lòng mở ca trước khi kiểm.");
       return;
     }
 
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
-      quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
-      quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
+      quantityStocks: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
+      quantityPackages: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
     }));
 
-    const data = {
-      items: stockItems,
-    };
+    const cashDetails = Object.keys(cashInputs)
+      .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
+      .map((key) => ({
+        denomination: parseInt(key),
+        quantity: parseInt(cashInputs[key]),
+      }));
 
-    Axios.post(`${API_ENDPOINT}shift/check-stock/${parseInt(shiftId)}`, data, {
+    const data = JSON.stringify({
+      totalAmount: calculateTotal() - (cashInputs.bankTransfer || 0),
+      amountBank: cashInputs.bankTransfer || 0,
+      note: note,
+      items: stockItems,
+    });
+
+    Axios.post(`${API_ENDPOINT}shift/check-cash-and-stock/${parseInt(shiftId)}`, data, {
       headers: {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "69420",
       },
     })
       .then((response) => {
-        if (response.data === "Kiểm kho thành công.") {
+        if (response.data === "Kiểm tiền và kiểm kho thành công.") {
+          setIsCheckCash(true);
           setIsCheckStock(true);
-          setShowStockModal(false);
+          setShowCloseShiftModal(false);
           Swal.fire({
-            title: response.data,
+            title: "Kết ca thành công",
             icon: "success",
             timer: 3000,
             showConfirmButton: false,
             timerProgressBar: true,
+          }).then(() => {
+            // Thực hiện sau khi Swal biến mất
+            localStorage.clear();
+            window.location.href = "/";
           });
         } else {
           Swal.fire({
             title: response.data,
+            icon: "warning",
             timer: 3000,
             showConfirmButton: false,
             timerProgressBar: true,
           });
-          setShowStockModal(false);
-          setIsCheckStock(true);
         }
       })
       .catch((error) => {
         console.error(error);
-        toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi kiểm kho");
+        toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi kiểm tra");
       });
   };
 
   const handleForceCloseShift = () => {
+    const shiftId = localStorage.getItem("shiftId");
+    if (!shiftId) {
+      toast.error("Không có ca làm việc để đóng.");
+      return;
+    }
+
     const data = JSON.stringify({
-      shiftId: parseInt(localStorage.getItem("shiftId")),
+      shiftId: parseInt(shiftId),
       note: note,
     });
 
-    const config = {
-      method: "post",
-      url: `${API_ENDPOINT}shift/force-close-shift`,
+    Axios.post(`${API_ENDPOINT}shift/force-close-shift`, data, {
       headers: {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "69420",
       },
-      data: data,
-    };
-
-    Axios.request(config)
+    })
       .then(() => {
         setShowErrorModal(false);
         performLogout();
@@ -270,11 +267,10 @@ const Home = () => {
   const handleDisconnect = () => {
     const shiftId = localStorage.getItem("shiftId");
     if (!shiftId) {
-      performLogout();
+      toast.error("Vui lòng mở ca làm việc trước khi đóng ca.");
+      setShowInitialStockModal(true);
       return;
     }
-
-    console.log("Checking if can close shift...");
 
     let config = {
       method: "get",
@@ -289,8 +285,8 @@ const Home = () => {
         if (response.data === "Đã hoàn thành ca.") {
           performLogout();
         } else {
-          setErrorMessage(response.data.message || "Không thể kết thúc ca do có đơn hàng chưa hoàn thành");
-          setShowErrorModal(true);
+          setErrorMessage(response.data || "Chưa hoàn tất việc kiểm kho hoặc kiểm tiền.");
+          setShowCloseShiftModal(true);
         }
       })
       .catch((error) => {
@@ -322,17 +318,11 @@ const Home = () => {
       return;
     }
 
-    // Validate Cash tab
     const hasCashInput = Object.values(cashInputs).some((value) => value > 0);
     if (!hasCashInput) {
       toast.error("Vui lòng nhập số tiền mặt trước khi mở ca.");
       return;
     }
-
-    // Validate Stocks tab
-    const hasStockInput = menuItems.some((item) =>
-      stockQuantities[item.id]?.quantityStocks > 0 || stockQuantities[item.id]?.quantityPackages > 0
-    );
 
     if (fullName === "") {
       toast.error("Vui lòng nhập tên nhân viên.");
@@ -407,23 +397,45 @@ const Home = () => {
       });
   };
 
-  const handleCheckCash = () => {
-    const shiftId = localStorage.getItem("shiftId");
-    if (!shiftId) {
-      toast.error("Bạn cần bắt đầu ca làm việc trước khi kiểm tiền.");
+  const handleConfirmInitialStock = () => {
+    const workerId = localStorage.getItem("workerId");
+    if (!workerId || isNaN(parseInt(workerId))) {
+      toast.error("ID nhân viên không hợp lệ. Vui lòng đăng nhập lại.");
+      setShowInitialStockModal(false);
       return;
     }
 
-    setShowCashModal(false);
-    let data = JSON.stringify({
-      totalAmount: calculateTotal() - cashInputs.bankTransfer,
-      amountBank: cashInputs.bankTransfer,
-      note: note,
+    const hasCashInput = Object.values(cashInputs).some((value) => value > 0);
+    if (!hasCashInput) {
+      toast.error("Vui lòng nhập số tiền mặt trước khi mở ca.");
+      return;
+    }
+
+    const totalAmount = calculateTotal();
+    const stockItems = menuItems.map((item) => ({
+      productId: parseInt(item.id),
+      quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
+      quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
+    }));
+
+    const cashDetails = Object.keys(cashInputs)
+      .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
+      .map((key) => ({
+        denomination: parseInt(key),
+        quantity: parseInt(cashInputs[key]),
+      }));
+
+    const data = JSON.stringify({
+      workerId: parseInt(workerId),
+      fullName: fullName || "Nhân viên",
+      totalAmount,
+      stocks: { items: stockItems },
+      cashDetails,
     });
 
     let config = {
       method: "post",
-      url: `${API_ENDPOINT}shift/check-cash/${parseInt(shiftId)}`,
+      url: `${API_ENDPOINT}shift/open-shift`,
       headers: {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "69420",
@@ -433,25 +445,36 @@ const Home = () => {
 
     Axios.request(config)
       .then((response) => {
-        if (response.data === "Tiền kiểm đếm thành công.") {
-          setIsCheckCash(true);
-          Swal.fire({
-            title: response.data,
-            icon: "success",
-            timer: 3000,
-            showConfirmButton: false,
-            timerProgressBar: true,
+        if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công.") {
+          toast.success("Bắt đầu ca mới và nhập kho thành công.");
+          localStorage.setItem("shiftId", response.data.shiftId);
+          localStorage.setItem("displayName", response.data.fullName);
+          setDisplayName(response.data.fullName);
+          setIsEnabled(true);
+          setIsCheckCash(false);
+          setIsCheckStock(false);
+          setShowInitialStockModal(false);
+          setCashInputs({
+            500: 0,
+            1000: 0,
+            2000: 0,
+            5000: 0,
+            10000: 0,
+            20000: 0,
+            50000: 0,
+            100000: 0,
+            200000: 0,
+            500000: 0,
+            bankTransfer: 0,
           });
+          setStockQuantities({});
         } else {
-          Swal.fire({
-            title: response.data,
-            icon: "error",
-          });
+          toast.error(response.data || "Mở ca thất bại");
         }
       })
       .catch((error) => {
-        console.error(error);
-        toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi kiểm tiền");
+        console.error("Open shift error:", error.response?.data);
+        toast.error(error.response?.data || "Đã xảy ra lỗi khi mở ca làm việc");
       });
   };
 
@@ -481,17 +504,13 @@ const Home = () => {
     );
   }
 
-  const canLogout = isCheckCash && isCheckStock;
-
   return (
     <div className="page-container">
-      {/* Top Container */}
       <div ref={ref} className={`cover-2 ${scrolled ? "scrolled" : ""}`}>
         <div className="info-container">
           {isConnected && (
             <div className="info-wallet">
               <div className="balance-info pb-[10px] pt-[10px] flex items-center justify-between">
-                {/* LEFT TEXT */}
                 <div className="usdt text-left">
                   <span className="text-[14px] italic leading-tight">
                     {displayName}
@@ -499,8 +518,6 @@ const Home = () => {
                     {currentTime}
                   </span>
                 </div>
-
-                {/* RIGHT BUTTONS */}
                 <div className="relative flex flex-row gap-2 h-[48px]">
                   <button
                     onClick={handleOpenShift}
@@ -508,44 +525,11 @@ const Home = () => {
                   >
                     <LogOut size={20} />
                   </button>
-
                   <button
                     onClick={handleDisconnect}
-                    disabled={!canLogout}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${canLogout
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      }`}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition text-[15px]"
                   >
                     <LogOut size={20} />
-                  </button>
-
-                  <button
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${isEnabled
-                      ? "bg-green-500 text-white hover:bg-green-600"
-                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      }`}
-                    disabled={!isEnabled}
-                    onClick={() => {
-                      setShowCashModal(true);
-                      setShowStockModal(false);
-                    }}
-                  >
-                    <DollarSign size={20} />
-                  </button>
-
-                  <button
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-[15px] ${isEnabled
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      }`}
-                    disabled={!isEnabled}
-                    onClick={() => {
-                      setShowStockModal(true);
-                      setShowCashModal(false);
-                    }}
-                  >
-                    <LineChart size={20} />
                   </button>
                 </div>
               </div>
@@ -574,7 +558,7 @@ const Home = () => {
                     className={tradingItemView === 4 ? "glow" : ""}
                     onClick={() => changeShowViewTrading(4)}
                   >
-                    25%
+                    100%
                   </button>
                 </div>
               )}
@@ -585,13 +569,10 @@ const Home = () => {
 
       <>
         {selectedDasTab === "Balance" && <Transaction handleTabClick={handleTabClick} />}
-
         {selectedDasTab === "Trading" && (
           <Dashboard enableShift={isEnabled} tradingItemView={tradingItemView} />
         )}
-
         {selectedDasTab === "Account" && <Account />}
-
         <div className="cover mb-2">
           <SubNav
             listNav={listDasNav}
@@ -602,17 +583,16 @@ const Home = () => {
         </div>
       </>
 
-      {/* Open Shift Modal */}
+      {/* Open Shift Modal (First Shift) */}
       {showOpenShiftModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
           <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
             <h2 className="text-xl font-semibold mb-2 text-center">Mở ca làm việc</h2>
-            {/* Tab Navigation */}
             <div className="flex border-b">
               <button
                 className={`flex-1 py-2 text-center ${activeTab === "Cash"
-                  ? "border-b-2 border-green-500 font-semibold text-black"
-                  : "text-gray-600 hover:text-black"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
                   }`}
                 onClick={() => setActiveTab("Cash")}
               >
@@ -620,15 +600,14 @@ const Home = () => {
               </button>
               <button
                 className={`flex-1 py-2 text-center ${activeTab === "Stocks"
-                  ? "border-b-2 border-green-500 font-semibold text-black"
-                  : "text-gray-600 hover:text-black"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
                   }`}
                 onClick={() => setActiveTab("Stocks")}
               >
                 Kho
               </button>
             </div>
-            {/* Tab Content */}
             {activeTab === "Cash" && (
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
@@ -637,10 +616,10 @@ const Home = () => {
                     <input
                       type="number"
                       className="border rounded px-2 py-1 w-20"
-                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? '' : cashInputs[denom]}
+                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
                       onChange={(e) => handleInputChange(e, denom)}
-                      onFocus={() => handleInputFocus('cash', denom)}
-                      onBlur={() => handleInputBlur('cash', denom)}
+                      onFocus={() => handleInputFocus("cash", denom)}
+                      onBlur={() => handleInputBlur("cash", denom)}
                     />
                   </div>
                 ))}
@@ -685,21 +664,13 @@ const Home = () => {
                                     ? ""
                                     : stockQuantities[item.id]?.quantityStocks || 0
                                 }
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  // Loại bỏ số 0 ở đầu
-                                  const processedValue =
-                                    value.startsWith("0") && value.length > 1
-                                      ? value.substring(1)
-                                      : value;
-                                  const parsedValue = processedValue === "" ? 0 : parseInt(processedValue) || 0;
-                                  handleStockQuantityChange(item.id, "quantityStocks", parsedValue);
-                                }}
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
+                                }
                                 className="w-16 border rounded px-2 py-1"
                                 onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
                                 onBlur={() => {
                                   handleInputBlur("stocks", `${item.id}-quantityStocks`);
-                                  // Đảm bảo giá trị là 0 nếu input rỗng
                                   if (!stockQuantities[item.id]?.quantityStocks) {
                                     handleStockQuantityChange(item.id, "quantityStocks", 0);
                                   }
@@ -717,21 +688,13 @@ const Home = () => {
                                     ? ""
                                     : stockQuantities[item.id]?.quantityPackages || 0
                                 }
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  // Loại bỏ số 0 ở đầu
-                                  const processedValue =
-                                    value.startsWith("0") && value.length > 1
-                                      ? value.substring(1)
-                                      : value;
-                                  const parsedValue = processedValue === "" ? 0 : parseInt(processedValue) || 0;
-                                  handleStockQuantityChange(item.id, "quantityPackages", parsedValue);
-                                }}
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                }
                                 className="w-16 border rounded px-2 py-1"
                                 onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
                                 onBlur={() => {
                                   handleInputBlur("stocks", `${item.id}-quantityPackages`);
-                                  // Đảm bảo giá trị là 0 nếu input rỗng
                                   if (!stockQuantities[item.id]?.quantityPackages) {
                                     handleStockQuantityChange(item.id, "quantityPackages", 0);
                                   }
@@ -779,58 +742,328 @@ const Home = () => {
         </div>
       )}
 
-      {/* Cash Modal */}
-      {showCashModal && (
+      {/* Initial Stock Modal (Non-First Shift) */}
+      {showInitialStockModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
-          <div className="bg-white rounded-xl p-3 w-[90%] max-w-md shadow-xl space-y-4 relative">
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
-                <div key={denom} className="flex items-center justify-between">
-                  <label>{denom.toLocaleString()}đ</label>
+          <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
+            <h2 className="text-xl font-semibold mb-2 text-center">Nhập kho đầu ca</h2>
+            <div className="flex border-b">
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Cash")}
+              >
+                Tiền mặt
+              </button>
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Stocks")}
+              >
+                Kho
+              </button>
+            </div>
+            {activeTab === "Cash" && (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
+                  <div key={denom} className="flex items-center justify-between">
+                    <label>{denom.toLocaleString()}đ</label>
+                    <input
+                      type="number"
+                      className="border rounded px-2 py-1 w-20"
+                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
+                      onChange={(e) => handleInputChange(e, denom)}
+                      onFocus={() => handleInputFocus("cash", denom)}
+                      onBlur={() => handleInputBlur("cash", denom)}
+                    />
+                  </div>
+                ))}
+                <div className="col-span-2 text-center mt-1 text-lg font-bold">
+                  <label>Tên nhân viên</label>
                   <input
-                    type="number"
-                    className="border rounded px-2 py-1 w-20"
-                    value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? '' : cashInputs[denom]}
-                    onChange={(e) => handleInputChange(e, denom)}
-                    onFocus={() => handleInputFocus('cash', denom)}
-                    onBlur={() => handleInputBlur('cash', denom)}
+                    type="text"
+                    className="border rounded px-2 py-1 w-30"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                   />
                 </div>
-              ))}
-              <div className="col-span-2 flex items-center justify-between mt-2">
-                <label>Chuyển khoản</label>
-                <input
-                  type="number"
-                  className="border rounded px-2 py-1 w-32"
-                  value={cashInputs.bankTransfer}
-                  onChange={(e) => handleInputChange(e, "bankTransfer")}
-                />
+                <div className="col-span-2 text-center mt-4 text-lg font-bold">
+                  Tổng tiền: {calculateTotal().toLocaleString()} đ
+                </div>
               </div>
-              <div className="col-span-2 flex items-center justify-between mt-2">
-                <label>Ghi chú</label>
-                <input
-                  type="text"
-                  className="border rounded px-2 py-1 w-32"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
+            )}
+            {activeTab === "Stocks" && (
+              <div className="max-h-[30svh] overflow-y-auto">
+                {menuItems.length === 0 ? (
+                  <p className="text-center text-gray-500">Không có sản phẩm để nhập kho.</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {menuItems
+                      .filter(
+                        (item) =>
+                          !item.name.toLowerCase().includes("double chesseburger") &&
+                          !item.name.toLowerCase().includes("double chickenburger")
+                      )
+                      .map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-2">
+                          <span className="flex-1 text-[12px]">{item.name}</span>
+                          <div className="flex gap-2">
+                            <div>
+                              <label className="text-[12px] mr-1">Bịch</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  stockQuantities[item.id]?.quantityStocks === 0 &&
+                                    inputFocus.stocks[`${item.id}-quantityStocks`]
+                                    ? ""
+                                    : stockQuantities[item.id]?.quantityStocks || 0
+                                }
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
+                                }
+                                className="w-16 border rounded px-2 py-1"
+                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
+                                onBlur={() => {
+                                  handleInputBlur("stocks", `${item.id}-quantityStocks`);
+                                  if (!stockQuantities[item.id]?.quantityStocks) {
+                                    handleStockQuantityChange(item.id, "quantityStocks", 0);
+                                  }
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[12px] mr-1">Đơn vị</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  stockQuantities[item.id]?.quantityPackages === 0 &&
+                                    inputFocus.stocks[`${item.id}-quantityPackages`]
+                                    ? ""
+                                    : stockQuantities[item.id]?.quantityPackages || 0
+                                }
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                }
+                                className="w-16 border rounded px-2 py-1"
+                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
+                                onBlur={() => {
+                                  handleInputBlur("stocks", `${item.id}-quantityPackages`);
+                                  if (!stockQuantities[item.id]?.quantityPackages) {
+                                    handleStockQuantityChange(item.id, "quantityPackages", 0);
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="text-center mt-4 text-lg font-bold">
-              Tổng tiền: {calculateTotal().toLocaleString()} đ
-            </div>
+            )}
             <div className="flex justify-between mt-4">
               <button
-                onClick={() => setShowCashModal(false)}
+                onClick={() => {
+                  setShowInitialStockModal(false);
+                  setCashInputs({
+                    500: 0,
+                    1000: 0,
+                    2000: 0,
+                    5000: 0,
+                    10000: 0,
+                    20000: 0,
+                    50000: 0,
+                    100000: 0,
+                    200000: 0,
+                    500000: 0,
+                    bankTransfer: 0,
+                  });
+                  setStockQuantities({});
+                }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >
                 Hủy
               </button>
               <button
-                onClick={handleCheckCash}
+                onClick={handleConfirmInitialStock}
                 className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
               >
-                Kiểm tra
+                Xác nhận mở ca
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close Shift Modal */}
+      {showCloseShiftModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
+          <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
+            <h2 className="text-xl font-semibold mb-2 text-center">Kết ca</h2>
+            <div className="flex border-b">
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Cash")}
+              >
+                Check Tiền
+              </button>
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Stocks")}
+              >
+                Check Kho
+              </button>
+            </div>
+            {activeTab === "Cash" && (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {[500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000].map((denom) => (
+                  <div key={denom} className="flex items-center justify-between">
+                    <label>{denom.toLocaleString()}đ</label>
+                    <input
+                      type="number"
+                      className="border rounded px-2 py-1 w-20"
+                      value={inputFocus.cash[denom] && cashInputs[denom] === 0 ? "" : cashInputs[denom]}
+                      onChange={(e) => handleInputChange(e, denom)}
+                      onFocus={() => handleInputFocus("cash", denom)}
+                      onBlur={() => handleInputBlur("cash", denom)}
+                    />
+                  </div>
+                ))}
+                <div className="col-span-2 flex items-center justify-between mt-2">
+                  <label>Chuyển khoản</label>
+                  <input
+                    type="number"
+                    className="border rounded px-2 py-1 w-32"
+                    value={cashInputs.bankTransfer}
+                    onChange={(e) => handleInputChange(e, "bankTransfer")}
+                  />
+                </div>
+                <div className="col-span-2 flex items-center justify-between mt-2">
+                  <label>Ghi chú</label>
+                  <input
+                    type="text"
+                    className="border rounded px-2 py-1 w-32"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2 text-center mt-4 text-lg font-bold">
+                  Tổng tiền: {calculateTotal().toLocaleString()} đ
+                </div>
+              </div>
+            )}
+            {activeTab === "Stocks" && (
+              <div className="max-h-[30svh] overflow-y-auto">
+                {menuItems.length === 0 ? (
+                  <p className="text-center text-gray-500">Không có sản phẩm để kiểm kho.</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {menuItems
+                      .filter(
+                        (item) =>
+                          !item.name.toLowerCase().includes("double chesseburger") &&
+                          !item.name.toLowerCase().includes("double chickenburger")
+                      )
+                      .map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-2">
+                          <span className="flex-1 text-[12px]">{item.name}</span>
+                          <div className="flex gap-2">
+                            <div>
+                              <label className="text-[12px] mr-1">Bịch</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  stockQuantities[item.id]?.quantityStocks === 0 &&
+                                    inputFocus.stocks[`${item.id}-quantityStocks`]
+                                    ? ""
+                                    : stockQuantities[item.id]?.quantityStocks || 0
+                                }
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
+                                }
+                                className="w-16 border rounded px-2 py-1"
+                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
+                                onBlur={() => {
+                                  handleInputBlur("stocks", `${item.id}-quantityStocks`);
+                                  if (!stockQuantities[item.id]?.quantityStocks) {
+                                    handleStockQuantityChange(item.id, "quantityStocks", 0);
+                                  }
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[12px] mr-1">Đơn vị</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  stockQuantities[item.id]?.quantityPackages === 0 &&
+                                    inputFocus.stocks[`${item.id}-quantityPackages`]
+                                    ? ""
+                                    : stockQuantities[item.id]?.quantityPackages || 0
+                                }
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                }
+                                className="w-16 border rounded px-2 py-1"
+                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
+                                onBlur={() => {
+                                  handleInputBlur("stocks", `${item.id}-quantityPackages`);
+                                  if (!stockQuantities[item.id]?.quantityPackages) {
+                                    handleStockQuantityChange(item.id, "quantityPackages", 0);
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={() => {
+                  setShowCloseShiftModal(false);
+                  setCashInputs({
+                    500: 0,
+                    1000: 0,
+                    2000: 0,
+                    5000: 0,
+                    10000: 0,
+                    20000: 0,
+                    50000: 0,
+                    100000: 0,
+                    200000: 0,
+                    500000: 0,
+                    bankTransfer: 0,
+                  });
+                  setStockQuantities({});
+                  setNote("");
+                }}
+                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleCheckCashAndStock}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Xác nhận kiểm tra
               </button>
             </div>
           </div>
@@ -868,84 +1101,6 @@ const Home = () => {
                   }`}
               >
                 Xác nhận đóng ca
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Stock Modal */}
-      {showStockModal && (
-        <div className="fixed inset-0 flex items-start justify-center z-50 mt-[120px]">
-          <div className="bg-white rounded-xl p-2 w-[90%] max-w-2xl shadow-xl flex flex-col h-[55svh] overflow-hidden">
-            {/* LIST */}
-            {menuItems.length === 0 ? (
-              <p className="text-center text-gray-500 flex-1 flex items-center justify-center">
-                Không có sản phẩm để kiểm kho.
-              </p>
-            ) : (
-              <div className="flex-1 max-h-[42svh] overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {menuItems
-                    .filter(
-                      (item) =>
-                        !item.name.toLowerCase().includes("double chesseburger") &&
-                        !item.name.toLowerCase().includes("double chickenburger")
-                    )
-                    .map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-2 border-b gap-2">
-                        <span className="flex-1">{item.name}</span>
-                        <div className="flex gap-2">
-                          <div>
-                            <label className="text-xs">Bịch</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={inputFocus.stocks[`${item.id}-quantityStocks`] && stockQuantities[item.id]?.quantityStocks === 0
-                                ? ''
-                                : stockQuantities[item.id]?.quantityStocks || 0}
-                              onChange={(e) => handleStockQuantityChange(item.id, "quantityStocks", e.target.value)}
-                              className="w-16 border rounded px-2 py-1"
-                              onFocus={() => handleInputFocus('stocks', `${item.id}-quantityStocks`)}
-                              onBlur={() => handleInputBlur('stocks', `${item.id}-quantityStocks`)}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs">Đơn vị</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={inputFocus.stocks[`${item.id}-quantityPackages`] && stockQuantities[item.id]?.quantityPackages === 0
-                                ? ''
-                                : stockQuantities[item.id]?.quantityPackages || 0}
-                              onChange={(e) => handleStockQuantityChange(item.id, "quantityPackages", e.target.value)}
-                              className="w-16 border rounded px-2 py-1"
-                              onFocus={() => handleInputFocus('stocks', `${item.id}-quantityPackages`)}
-                              onBlur={() => handleInputBlur('stocks', `${item.id}-quantityPackages`)}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {/* BUTTONS */}
-            <div className="flex justify-between pt-10">
-              <button
-                onClick={() => setShowStockModal(false)}
-                className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleCheckStock}
-                disabled={menuItems.length === 0}
-                className={`px-4 py-2 rounded ${menuItems.length === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600 text-white"
-                  }`}
-              >
-                Xác nhận kiểm kho
               </button>
             </div>
           </div>

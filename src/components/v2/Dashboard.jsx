@@ -72,7 +72,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     if (loading) return;
     setLoading(true);
 
-    const menuType = tradingItemView === 4 ? 25 : (tradingItemView - 1) * 10;
+    const menuType = tradingItemView === 4 ? 100 : (tradingItemView - 1) * 10;
     Axios.get(`${API_ENDPOINT}shift/menu/${menuType}`, {
       headers: { "ngrok-skip-browser-warning": "69420" },
     })
@@ -558,7 +558,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                           </span>
                           <div className="flex items-center gap-3">
                             <span className="text-black text-[14px]">
-                              {formatCurrency(c.qty * c.price)}
+                              {formatCurrency(c.qty * getDiscountedPrice(c))}
                             </span>
                             <button
                               onClick={() => handleDecrease(c.id)}
@@ -589,7 +589,7 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                 </div>
                 <div className="border-t border-black/10 pt-4 mt-4">
                   {(() => {
-                    const subtotal = cart.reduce((s, i) => s + i.qty * i.price, 0);
+                    const subtotal = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
                     const vat = subtotal * 0.1;
                     const total = subtotal + vat;
 
