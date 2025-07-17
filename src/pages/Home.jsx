@@ -35,10 +35,12 @@ const Home = () => {
     cash: {},
     stocks: {},
   });
+
   const [inputFocus, setInputFocus] = useState({
     cash: {},
     stocks: {},
   });
+
   const [cashInputs, setCashInputs] = useState({
     500: 0,
     1000: 0,
@@ -104,6 +106,33 @@ const Home = () => {
       }
     });
     return total;
+  };
+
+  const resetStockAndCash = () => {
+    // Reset cash inputs
+    setCashInputs({
+      500: 0,
+      1000: 0,
+      2000: 0,
+      5000: 0,
+      10000: 0,
+      20000: 0,
+      50000: 0,
+      100000: 0,
+      200000: 0,
+      500000: 0,
+      bankTransfer: 0,
+    });
+
+    // Reset stock quantities
+    const initialQuantities = {};
+    menuItems.forEach((item) => {
+      initialQuantities[item.id] = { quantityStocks: 0, quantityPackages: 0 };
+    });
+    setStockQuantities(initialQuantities);
+
+    // Reset note
+    setNote("");
   };
 
   useEffect(() => {
@@ -177,8 +206,8 @@ const Home = () => {
 
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
-      quantityStocks: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
-      quantityPackages: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
+      quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
+      quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
     }));
 
     const cashDetails = Object.keys(cashInputs)
@@ -209,6 +238,8 @@ const Home = () => {
           setIsEnabled(false);
           localStorage.removeItem("shiftId");
           localStorage.removeItem("isFirstShift");
+          setFullName("");
+          resetStockAndCash(); // Reset stock and cash data
           Swal.fire({
             title: "Kết ca thành công",
             icon: "success",
@@ -255,6 +286,7 @@ const Home = () => {
         setIsEnabled(false);
         localStorage.removeItem("shiftId");
         localStorage.removeItem("isFirstShift");
+        resetStockAndCash(); // Reset stock and cash data
         toast.success("Đã đóng ca thành công");
       })
       .catch((error) => {
@@ -285,6 +317,7 @@ const Home = () => {
           setIsEnabled(false);
           localStorage.removeItem("shiftId");
           localStorage.removeItem("isFirstShift");
+          resetStockAndCash(); // Reset stock and cash data
           toast.success("Đã đóng ca thành công");
         } else {
           setErrorMessage(response.data || "Chưa hoàn tất việc kiểm kho hoặc kiểm tiền.");
@@ -309,10 +342,16 @@ const Home = () => {
       return;
     }
 
+    setActiveTab("Cash"); // Set default tab to "Cash"
     setShowOpenShiftModal(true);
   };
 
   const handleConfirmOpenShift = () => {
+    if (multiTabDetect) {
+      toast.error("You are in multi-tab mode. Please close other tabs to open a shift.");
+      return;
+    }
+
     const workerId = localStorage.getItem("workerId");
     if (!workerId || isNaN(parseInt(workerId))) {
       toast.error("ID nhân viên không hợp lệ. Vui lòng đăng nhập lại.");
@@ -375,20 +414,7 @@ const Home = () => {
           setIsCheckCash(false);
           setIsCheckStock(false);
           setShowOpenShiftModal(false);
-          setCashInputs({
-            500: 0,
-            1000: 0,
-            2000: 0,
-            5000: 0,
-            10000: 0,
-            20000: 0,
-            50000: 0,
-            100000: 0,
-            200000: 0,
-            500000: 0,
-            bankTransfer: 0,
-          });
-          setStockQuantities({});
+          resetStockAndCash(); // Reset stock and cash data
         } else {
           toast.error(response.data || "Mở ca thất bại");
         }
@@ -400,6 +426,11 @@ const Home = () => {
   };
 
   const handleConfirmInitialStock = () => {
+    if (multiTabDetect) {
+      toast.error("You are in multi-tab mode. Please close other tabs to open a shift.");
+      return;
+    }
+
     const workerId = localStorage.getItem("workerId");
     if (!workerId || isNaN(parseInt(workerId))) {
       toast.error("ID nhân viên không hợp lệ. Vui lòng đăng nhập lại.");
@@ -461,20 +492,7 @@ const Home = () => {
           setIsCheckCash(false);
           setIsCheckStock(false);
           setShowInitialStockModal(false);
-          setCashInputs({
-            500: 0,
-            1000: 0,
-            2000: 0,
-            5000: 0,
-            10000: 0,
-            20000: 0,
-            50000: 0,
-            100000: 0,
-            200000: 0,
-            500000: 0,
-            bankTransfer: 0,
-          });
-          setStockQuantities({});
+          resetStockAndCash(); // Reset stock and cash data
         } else {
           toast.error(response.data || "Mở ca thất bại");
         }
@@ -738,20 +756,7 @@ const Home = () => {
               <button
                 onClick={() => {
                   setShowOpenShiftModal(false);
-                  setCashInputs({
-                    500: 0,
-                    1000: 0,
-                    2000: 0,
-                    5000: 0,
-                    10000: 0,
-                    20000: 0,
-                    50000: 0,
-                    100000: 0,
-                    200000: 0,
-                    500000: 0,
-                    bankTransfer: 0,
-                  });
-                  setStockQuantities({});
+                  resetStockAndCash(); // Reset stock and cash data on cancel
                 }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >
@@ -901,20 +906,7 @@ const Home = () => {
               <button
                 onClick={() => {
                   setShowInitialStockModal(false);
-                  setCashInputs({
-                    500: 0,
-                    1000: 0,
-                    2000: 0,
-                    5000: 0,
-                    10000: 0,
-                    20000: 0,
-                    50000: 0,
-                    100000: 0,
-                    200000: 0,
-                    500000: 0,
-                    bankTransfer: 0,
-                  });
-                  setStockQuantities({});
+                  resetStockAndCash(); // Reset stock and cash data on cancel
                 }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >
@@ -1073,21 +1065,7 @@ const Home = () => {
               <button
                 onClick={() => {
                   setShowCloseShiftModal(false);
-                  setCashInputs({
-                    500: 0,
-                    1000: 0,
-                    2000: 0,
-                    5000: 0,
-                    10000: 0,
-                    20000: 0,
-                    50000: 0,
-                    100000: 0,
-                    200000: 0,
-                    500000: 0,
-                    bankTransfer: 0,
-                  });
-                  setStockQuantities({});
-                  setNote("");
+                  resetStockAndCash(); // Reset stock and cash data on cancel
                 }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >
