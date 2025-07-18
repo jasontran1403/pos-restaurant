@@ -590,7 +590,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                 <div className="border-t border-black/10 pt-4 mt-4">
                   {(() => {
                     const subtotal = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
-                    const vat = subtotal * 0.1;
+                    // const vat = subtotal * 0.1;
+                    const vat = 0;
                     const total = subtotal + vat;
 
                     return (
