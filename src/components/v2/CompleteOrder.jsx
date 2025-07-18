@@ -159,22 +159,12 @@ const CompleteOrder = () => {
   const handleSubmitReport = () => {
     const { startDate, endDate } = reportDateRange;
     if (!startDate || !endDate) {
-      Swal.fire({
-        title: "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc!",
-        icon: "warning",
-        timer: 1200,
-        showConfirmButton: false,
-      });
+      toast.error("Vui lòng chọn cả ngày bắt đầu và ngày kết thúc!");
       return;
     }
 
     if (new Date(startDate) > new Date(endDate)) {
-      Swal.fire({
-        title: "Ngày bắt đầu không thể lớn hơn ngày kết thúc!",
-        icon: "warning",
-        timer: 1200,
-        showConfirmButton: false,
-      });
+      toast.error("Ngày bắt đầu không thể lớn hơn ngày kết thúc!");
       return;
     }
 
@@ -201,12 +191,7 @@ const CompleteOrder = () => {
         setReportDateRange({ startDate: "", endDate: "" });
       })
       .catch((error) => {
-        Swal.fire({
-          title: "Không thể tải báo cáo",
-          icon: "error",
-          timer: 1200,
-          showConfirmButton: false,
-        });
+        toast.error("Không có dữ liệu báo cáo trong khoảng thời gian trên!");
       });
   };
 
