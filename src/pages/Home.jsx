@@ -35,12 +35,10 @@ const Home = () => {
     cash: {},
     stocks: {},
   });
-
   const [inputFocus, setInputFocus] = useState({
     cash: {},
     stocks: {},
   });
-
   const [cashInputs, setCashInputs] = useState({
     500: 0,
     1000: 0,
@@ -109,7 +107,6 @@ const Home = () => {
   };
 
   const resetStockAndCash = () => {
-    // Reset cash inputs
     setCashInputs({
       500: 0,
       1000: 0,
@@ -123,15 +120,11 @@ const Home = () => {
       500000: 0,
       bankTransfer: 0,
     });
-
-    // Reset stock quantities
     const initialQuantities = {};
     menuItems.forEach((item) => {
       initialQuantities[item.id] = { quantityStocks: 0, quantityPackages: 0 };
     });
     setStockQuantities(initialQuantities);
-
-    // Reset note
     setNote("");
   };
 
@@ -151,7 +144,6 @@ const Home = () => {
       const month = String(now.getMonth() + 1).padStart(2, "0");
       setCurrentTime(`${hours}:${minutes}:${seconds} ${day}/${month}`);
     };
-
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
@@ -203,27 +195,23 @@ const Home = () => {
       toast.error("Ca làm việc không hợp lệ. Vui lòng mở ca trước khi kiểm.");
       return;
     }
-
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
       quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
       quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
     }));
-
     const cashDetails = Object.keys(cashInputs)
       .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
       .map((key) => ({
         denomination: parseInt(key),
         quantity: parseInt(cashInputs[key]),
       }));
-
     const data = JSON.stringify({
       totalAmount: calculateTotal() - (cashInputs.bankTransfer || 0),
       amountBank: cashInputs.bankTransfer || 0,
       note: note,
       items: stockItems,
     });
-
     Axios.post(`${API_ENDPOINT}shift/check-cash-and-stock/${parseInt(shiftId)}`, data, {
       headers: {
         "Content-Type": "application/json",
@@ -239,7 +227,7 @@ const Home = () => {
           localStorage.removeItem("shiftId");
           localStorage.removeItem("isFirstShift");
           setFullName("");
-          resetStockAndCash(); // Reset stock and cash data
+          resetStockAndCash();
           Swal.fire({
             title: "Kết ca thành công",
             icon: "success",
@@ -269,12 +257,10 @@ const Home = () => {
       toast.error("Không có ca làm việc để đóng.");
       return;
     }
-
     const data = JSON.stringify({
       shiftId: parseInt(shiftId),
       note: note,
     });
-
     Axios.post(`${API_ENDPOINT}shift/force-close-shift`, data, {
       headers: {
         "Content-Type": "application/json",
@@ -286,7 +272,7 @@ const Home = () => {
         setIsEnabled(false);
         localStorage.removeItem("shiftId");
         localStorage.removeItem("isFirstShift");
-        resetStockAndCash(); // Reset stock and cash data
+        resetStockAndCash();
         toast.success("Đã đóng ca thành công");
       })
       .catch((error) => {
@@ -302,7 +288,6 @@ const Home = () => {
       setShowInitialStockModal(true);
       return;
     }
-
     let config = {
       method: "get",
       url: `${API_ENDPOINT}shift/can-close-shift/${parseInt(shiftId)}`,
@@ -310,14 +295,13 @@ const Home = () => {
         "ngrok-skip-browser-warning": "69420",
       },
     };
-
     Axios.request(config)
       .then((response) => {
         if (response.data === "Đã hoàn thành ca.") {
           setIsEnabled(false);
           localStorage.removeItem("shiftId");
           localStorage.removeItem("isFirstShift");
-          resetStockAndCash(); // Reset stock and cash data
+          resetStockAndCash();
           toast.success("Đã đóng ca thành công");
         } else {
           setErrorMessage(response.data || "Chưa hoàn tất việc kiểm kho hoặc kiểm tiền.");
@@ -336,13 +320,11 @@ const Home = () => {
       toast.error("You are in multi-tab mode. Please close other tabs to open a shift.");
       return;
     }
-
     if (localStorage.getItem("shiftId")) {
       toast.error("Đã có ca làm việc hiện tại, không thể mở ca mới.");
       return;
     }
-
-    setActiveTab("Cash"); // Set default tab to "Cash"
+    setActiveTab("Cash");
     setShowOpenShiftModal(true);
   };
 
@@ -351,47 +333,41 @@ const Home = () => {
       toast.error("You are in multi-tab mode. Please close other tabs to open a shift.");
       return;
     }
-
     const workerId = localStorage.getItem("workerId");
     if (!workerId || isNaN(parseInt(workerId))) {
       toast.error("ID nhân viên không hợp lệ. Vui lòng đăng nhập lại.");
       setShowOpenShiftModal(false);
       return;
     }
-
     const hasCashInput = Object.values(cashInputs).some((value) => value > 0);
     if (!hasCashInput) {
       toast.error("Vui lòng nhập số tiền mặt trước khi mở ca.");
       return;
     }
-
     if (fullName === "") {
       toast.error("Vui lòng nhập tên nhân viên.");
       return;
     }
-
     const totalAmount = calculateTotal();
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
       quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
       quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
     }));
-
     const cashDetails = Object.keys(cashInputs)
       .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
       .map((key) => ({
         denomination: parseInt(key),
         quantity: parseInt(cashInputs[key]),
       }));
-
+    const isFirstShift = localStorage.getItem("isFirstShift") === "true";
     const data = JSON.stringify({
       workerId: parseInt(workerId),
       fullName: fullName,
       totalAmount,
-      stocks: { items: stockItems },
+      stocks: isFirstShift ? { items: stockItems } : { items: [] }, // Send stock only for first shift
       cashDetails,
     });
-
     let config = {
       method: "post",
       url: `${API_ENDPOINT}shift/open-shift`,
@@ -401,20 +377,19 @@ const Home = () => {
       },
       data: data,
     };
-
     Axios.request(config)
       .then((response) => {
         if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công." || response.data.message === "") {
           toast.success("Đã bắt đầu ca");
           localStorage.setItem("shiftId", response.data.shiftId);
-          localStorage.setItem("isFirstShift", false);
+          localStorage.setItem("isFirstShift", false); // Set to false after opening first shift
           localStorage.setItem("displayName", response.data.fullName);
           setDisplayName(response.data.fullName);
           setIsEnabled(true);
           setIsCheckCash(false);
           setIsCheckStock(false);
           setShowOpenShiftModal(false);
-          resetStockAndCash(); // Reset stock and cash data
+          resetStockAndCash();
         } else {
           toast.error(response.data || "Mở ca thất bại");
         }
@@ -430,47 +405,39 @@ const Home = () => {
       toast.error("You are in multi-tab mode. Please close other tabs to open a shift.");
       return;
     }
-
     const workerId = localStorage.getItem("workerId");
     if (!workerId || isNaN(parseInt(workerId))) {
       toast.error("ID nhân viên không hợp lệ. Vui lòng đăng nhập lại.");
       setShowInitialStockModal(false);
       return;
     }
-
     const hasCashInput = Object.values(cashInputs).some((value) => value > 0);
     if (!hasCashInput) {
       toast.error("Vui lòng nhập số tiền mặt trước khi mở ca.");
       return;
     }
-
     if (fullName === "") {
       toast.error("Vui lòng nhập tên nhân viên.");
       return;
     }
-
     const totalAmount = calculateTotal();
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
       quantityStocks: parseInt(stockQuantities[item.id]?.quantityPackages || 0),
       quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
     }));
-
-    const cashDetails = Object.keys(cashInputs)
-      .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
-      .map((key) => ({
-        denomination: parseInt(key),
-        quantity: parseInt(cashInputs[key]),
-      }));
-
     const data = JSON.stringify({
       workerId: parseInt(workerId),
       fullName: fullName || "Nhân viên",
       totalAmount,
       stocks: { items: stockItems },
-      cashDetails,
+      cashDetails: Object.keys(cashInputs)
+        .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
+        .map((key) => ({
+          denomination: parseInt(key),
+          quantity: parseInt(cashInputs[key]),
+        })),
     });
-
     let config = {
       method: "post",
       url: `${API_ENDPOINT}shift/open-shift`,
@@ -480,7 +447,6 @@ const Home = () => {
       },
       data: data,
     };
-
     Axios.request(config)
       .then((response) => {
         if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công.") {
@@ -492,7 +458,7 @@ const Home = () => {
           setIsCheckCash(false);
           setIsCheckStock(false);
           setShowInitialStockModal(false);
-          resetStockAndCash(); // Reset stock and cash data
+          resetStockAndCash();
         } else {
           toast.error(response.data || "Mở ca thất bại");
         }
@@ -528,6 +494,8 @@ const Home = () => {
       </div>
     );
   }
+
+  const isFirstShift = localStorage.getItem("isFirstShift") === "true";
 
   return (
     <div className="page-container">
@@ -573,7 +541,6 @@ const Home = () => {
                   </button>
                 </div>
               </div>
-
               {selectedDasTab === "Trading" && (
                 <div className="animation-fadeIn transaction-btn">
                   <button
@@ -623,11 +590,11 @@ const Home = () => {
         </div>
       </>
 
-      {/* Open Shift Modal (First Shift) */}
+      {/* Open Shift Modal */}
       {showOpenShiftModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
           <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
-            <h2 className="text-xl font-semibold mb-2 text-center">Mở ca làm việc</h2>
+            <h2 className="text-xl font-semibold mb-2 text-center">{isFirstShift ? "Mở ca đầu ngày" : "Mở ca mới"}</h2>
             <div className="flex border-b">
               <button
                 className={`flex-1 py-2 text-center ${
@@ -639,16 +606,18 @@ const Home = () => {
               >
                 Tiền mặt
               </button>
-              <button
-                className={`flex-1 py-2 text-center ${
-                  activeTab === "Stocks"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
-                }`}
-                onClick={() => setActiveTab("Stocks")}
-              >
-                Kho
-              </button>
+              {isFirstShift && (
+                <button
+                  className={`flex-1 py-2 text-center ${
+                    activeTab === "Stocks"
+                      ? "border-b-2 border-green-500 font-semibold text-black"
+                      : "text-gray-600 hover:text-black"
+                  }`}
+                  onClick={() => setActiveTab("Stocks")}
+                >
+                  Kho
+                </button>
+              )}
             </div>
             {activeTab === "Cash" && (
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -681,7 +650,7 @@ const Home = () => {
                 </div>
               </div>
             )}
-            {activeTab === "Stocks" && (
+            {activeTab === "Stocks" && isFirstShift && (
               <div className="max-h-[30svh] overflow-y-auto">
                 {menuItems.length === 0 ? (
                   <p className="text-center text-gray-500">Không có sản phẩm để nhập kho.</p>
@@ -756,7 +725,7 @@ const Home = () => {
               <button
                 onClick={() => {
                   setShowOpenShiftModal(false);
-                  resetStockAndCash(); // Reset stock and cash data on cancel
+                  resetStockAndCash();
                 }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >
@@ -788,16 +757,6 @@ const Home = () => {
                 onClick={() => setActiveTab("Cash")}
               >
                 Tiền mặt
-              </button>
-              <button
-                className={`flex-1 py-2 text-center ${
-                  activeTab === "Stocks"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
-                }`}
-                onClick={() => setActiveTab("Stocks")}
-              >
-                Kho
               </button>
             </div>
             {activeTab === "Cash" && (
@@ -831,82 +790,11 @@ const Home = () => {
                 </div>
               </div>
             )}
-            {activeTab === "Stocks" && (
-              <div className="max-h-[30svh] overflow-y-auto">
-                {menuItems.length === 0 ? (
-                  <p className="text-center text-gray-500">Không có sản phẩm để nhập kho.</p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2">
-                    {menuItems
-                      .filter(
-                        (item) =>
-                          !item.name.toLowerCase().includes("double chesseburger") &&
-                          !item.name.toLowerCase().includes("double chickenburger")
-                      )
-                      .map((item) => (
-                        <div key={item.id} className="flex items-center justify-between gap-2">
-                          <span className="flex-1 text-[12px]">{item.name}</span>
-                          <div className="flex gap-2">
-                            <div>
-                              <label className="text-[12px] mr-1">Bịch</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={
-                                  stockQuantities[item.id]?.quantityStocks === 0 &&
-                                  inputFocus.stocks[`${item.id}-quantityStocks`]
-                                    ? ""
-                                    : stockQuantities[item.id]?.quantityStocks || 0
-                                }
-                                onChange={(e) =>
-                                  handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
-                                }
-                                className="w-16 border rounded px-2 py-1"
-                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
-                                onBlur={() => {
-                                  handleInputBlur("stocks", `${item.id}-quantityStocks`);
-                                  if (!stockQuantities[item.id]?.quantityStocks) {
-                                    handleStockQuantityChange(item.id, "quantityStocks", 0);
-                                  }
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[12px] mr-1">Đơn vị</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={
-                                  stockQuantities[item.id]?.quantityPackages === 0 &&
-                                  inputFocus.stocks[`${item.id}-quantityPackages`]
-                                    ? ""
-                                    : stockQuantities[item.id]?.quantityPackages || 0
-                                }
-                                onChange={(e) =>
-                                  handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
-                                }
-                                className="w-16 border rounded px-2 py-1"
-                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
-                                onBlur={() => {
-                                  handleInputBlur("stocks", `${item.id}-quantityPackages`);
-                                  if (!stockQuantities[item.id]?.quantityPackages) {
-                                    handleStockQuantityChange(item.id, "quantityPackages", 0);
-                                  }
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => {
                   setShowInitialStockModal(false);
-                  resetStockAndCash(); // Reset stock and cash data on cancel
+                  resetStockAndCash();
                 }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >
@@ -1065,7 +953,7 @@ const Home = () => {
               <button
                 onClick={() => {
                   setShowCloseShiftModal(false);
-                  resetStockAndCash(); // Reset stock and cash data on cancel
+                  resetStockAndCash();
                 }}
                 className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
               >

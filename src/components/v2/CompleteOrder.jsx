@@ -4,7 +4,7 @@ import { API_ENDPOINT } from "../../constants";
 import Swal from "sweetalert2/dist/sweetalert2.js";
 import "sweetalert2/src/sweetalert2.scss";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "react-toastify"; // Assuming you use react-toastify for toasts
+import { toast } from "react-toastify";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -17,9 +17,13 @@ const CompleteOrder = () => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(null); // "import" or "destroy"
+  const [modalType, setModalType] = useState(null); // "import", "destroy", or "report"
   const [menuItems, setMenuItems] = useState([]);
   const [stockQuantities, setStockQuantities] = useState({});
+  const [reportDateRange, setReportDateRange] = useState({
+    startDate: "",
+    endDate: "",
+  });
 
   /* ----------- Lấy dữ liệu ----------- */
   useEffect(() => {
@@ -138,9 +142,47 @@ const CompleteOrder = () => {
     }
   };
 
+  /* ----------- Handle Report Date Range Change ----------- */
+  const handleDateChange = (e) => {
+    setReportDateRange((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
   /* ----------- Download Report ----------- */
   const handleDownloadReport = () => {
+    setModalType("report");
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitReport = () => {
+    const { startDate, endDate } = reportDateRange;
+    if (!startDate || !endDate) {
+      Swal.fire({
+        title: "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc!",
+        icon: "warning",
+        timer: 1200,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      Swal.fire({
+        title: "Ngày bắt đầu không thể lớn hơn ngày kết thúc!",
+        icon: "warning",
+        timer: 1200,
+        showConfirmButton: false,
+      });
+      return;
+    }
+
     Axios.get(`${API_ENDPOINT}shift/download-report`, {
+      params: {
+        startDate,
+        endDate,
+      },
       headers: {
         "ngrok-skip-browser-warning": "69420",
       },
@@ -150,11 +192,13 @@ const CompleteOrder = () => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement("a");
         link.href = url;
-        link.setAttribute("download", "sales_report.csv");
+        link.setAttribute("download", `sales_report_${startDate}_to_${endDate}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
+        setIsModalOpen(false);
+        setReportDateRange({ startDate: "", endDate: "" });
       })
       .catch((error) => {
         Swal.fire({
@@ -182,9 +226,9 @@ const CompleteOrder = () => {
     if (localStorage.getItem("shiftId") == null || localStorage.getItem("shiftId") == "") return;
     const payload = {
       items: Object.entries(stockQuantities).map(([itemId, quantities]) => ({
-        productId: itemId, // Map itemId to productId as expected by backend
-        ...(modalType === "import" ? { quantityPackages: quantities.quantityPackages } : {}), // Use quantityStocks for import
-        ...(modalType === "destroy" ? { quantityStocks: quantities.quantityPackages } : {}), // Use quantityPackages for destroy
+        productId: itemId,
+        ...(modalType === "import" ? { quantityPackages: quantities.quantityPackages } : {}),
+        ...(modalType === "destroy" ? { quantityStocks: quantities.quantityPackages } : {}),
       })),
     };
 
@@ -268,7 +312,6 @@ const CompleteOrder = () => {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {listOrders.map((order) => (
           <AnimatePresence key={order.orderId}>
-            {/* Only show the card if it's expanded or no card is expanded */}
             {(!expandedOrder || expandedOrder === order.orderId) && (
               <motion.div
                 className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-3 grid grid-cols-3 items-start
@@ -278,17 +321,14 @@ const CompleteOrder = () => {
                 initial={{ scale: 1 }}
                 animate={{
                   scale: expandedOrder === order.orderId ? 1 : 1,
-                  width: expandedOrder === order.orderId ? "100%" : "auto"
+                  width: expandedOrder === order.orderId ? "100%" : "auto",
                 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
                 layout
               >
-                {/* TIME */}
                 <div className="text-left text-xs text-white/80 leading-tight">
-                  <div>
-                    {new Date(order.createdAt * 1000).toLocaleTimeString("vi-VN")}
-                  </div>
+                  <div>{new Date(order.createdAt * 1000).toLocaleTimeString("vi-VN")}</div>
                   <div>
                     {new Date(order.createdAt * 1000).toLocaleDateString("vi-VN", {
                       day: "2-digit",
@@ -297,18 +337,10 @@ const CompleteOrder = () => {
                     })}
                   </div>
                 </div>
-
-                {/* CENTER */}
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-white">
-                    Đơn #{order.orderId}
-                  </div>
-                  <div className="text-green-200 text-sm">
-                    {formatNumber(order.totalAmount)} đ
-                  </div>
+                  <div className="text-lg font-semibold text-white">Đơn #{order.orderId}</div>
+                  <div className="text-green-200 text-sm">{formatNumber(order.totalAmount)} đ</div>
                 </div>
-
-                {/* STATUS + TOGGLE */}
                 <div className="text-right flex flex-col items-end mt-2">
                   <span
                     className="text-green-300"
@@ -339,8 +371,6 @@ const CompleteOrder = () => {
                     )}
                   </span>
                 </div>
-
-                {/* ORDER DETAILS (EXPANDABLE) */}
                 {expandedOrder === order.orderId && (
                   <motion.div
                     className="col-span-3 mt-4 bg-white/10 rounded-lg overflow-hidden"
@@ -369,9 +399,7 @@ const CompleteOrder = () => {
                               layout
                             >
                               <span className="text-white">{item.name} × {item.qty}</span>
-                              <span className="text-green-200">
-                                {formatNumber(item.price * item.qty)} đ
-                              </span>
+                              <span className="text-green-200">{formatNumber(item.price * item.qty)} đ</span>
                             </motion.div>
                           ))}
                         </AnimatePresence>
@@ -395,20 +423,17 @@ const CompleteOrder = () => {
           >
             ‹
           </button>
-
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <button
               key={p}
               onClick={() => setCurrentPage(p)}
-              className={`px-3 py-1 rounded ${p === currentPage
-                ? "bg-white text-black font-semibold"
-                : "bg-white/20 text-white"
-                }`}
+              className={`px-3 py-1 rounded ${
+                p === currentPage ? "bg-white text-black font-semibold" : "bg-white/20 text-white"
+              }`}
             >
               {p}
             </button>
           ))}
-
           <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => p + 1)}
@@ -419,7 +444,7 @@ const CompleteOrder = () => {
         </div>
       )}
 
-      {/* MODAL FOR IMPORT/DESTROY */}
+      {/* MODAL FOR IMPORT/DESTROY/REPORT */}
       {isModalOpen && (
         <motion.div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000]"
@@ -428,67 +453,120 @@ const CompleteOrder = () => {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-white/70 backdrop-blur-md p-6 rounded-lg w-[90%] max-w-md"
+            className="bg-white/80 backdrop-blur-md p-6 rounded-lg w-[90%] max-w-md"
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
           >
-            <h2 className="text-green text-lg mb-4">
-              {modalType === "import" ? "Nhập kho" : "Xóa kho"}
-            </h2>
-            <div className="max-h-[30svh] overflow-y-auto">
-              {menuItems.length === 0 ? (
-                <p className="text-center text-gray-500">Không có sản phẩm để {modalType === "import" ? "nhập" : "xóa"} kho.</p>
-              ) : (
-                <div className="grid grid-cols-1 gap-2">
-                  {menuItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-2">
-                      <span className="flex-1 text-[12px]">{item.name}</span>
-                      <div className="flex gap-2">
-                        {modalType === "import" && (
-                          <div>
-                            <label className="text-[12px] mr-1">Bịch</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={stockQuantities[item.id]?.quantityStocks || 0}
-                              onChange={(e) => handleStockQuantityChange(item.id, "quantityStocks", e.target.value)}
-                              className="w-16 border rounded px-2 py-1"
-                            />
-                          </div>
-                        )}
-                        {modalType === "destroy" && (
-                          <div>
-                            <label className="text-[12px] mr-1">Đơn vị</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={stockQuantities[item.id]?.quantityPackages || 0}
-                              onChange={(e) => handleStockQuantityChange(item.id, "quantityPackages", e.target.value)}
-                              className="w-16 border rounded px-2 py-1"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+            {modalType === "report" ? (
+              <>
+                <h2 className="text-green text-lg mb-4">Chọn khoảng thời gian cho báo cáo</h2>
+                <div className="grid gap-4">
+                  <div>
+                    <label className="text-[12px] mr-1">Ngày bắt đầu</label>
+                    <input
+                      type="date"
+                      name="startDate"
+                      value={reportDateRange.startDate}
+                      onChange={handleDateChange}
+                      className="w-full border rounded px-2 py-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[12px] mr-1">Ngày kết thúc</label>
+                    <input
+                      type="date"
+                      name="endDate"
+                      value={reportDateRange.endDate}
+                      onChange={handleDateChange}
+                      className="w-full border rounded px-2 py-1"
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-red-800 rounded hover:bg-white-400"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleSubmitStock}
-                className="px-4 py-2 text-green-800 rounded hover:bg-white-400"
-              >
-                Xác nhận
-              </button>
-            </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setReportDateRange({ startDate: "", endDate: "" });
+                    }}
+                    className="px-4 py-2 text-red-800 rounded hover:bg-white-400"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleSubmitReport}
+                    className="px-4 py-2 text-green-800 rounded hover:bg-white-400"
+                  >
+                    Tải báo cáo
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-green text-lg mb-4">
+                  {modalType === "import" ? "Nhập kho" : "Xóa kho"}
+                </h2>
+                <div className="max-h-[30svh] overflow-y-auto">
+                  {menuItems.length === 0 ? (
+                    <p className="text-center text-gray-500">
+                      Không có sản phẩm để {modalType === "import" ? "nhập" : "xóa"} kho.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                      {menuItems.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-2">
+                          <span className="flex-1 text-[12px]">{item.name}</span>
+                          <div className="flex gap-2">
+                            {modalType === "import" && (
+                              <div>
+                                <label className="text-[12px] mr-1">Bịch</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={stockQuantities[item.id]?.quantityStocks || 0}
+                                  onChange={(e) =>
+                                    handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
+                                  }
+                                  className="w-16 border rounded px-2 py-1"
+                                />
+                              </div>
+                            )}
+                            {modalType === "destroy" && (
+                              <div>
+                                <label className="text-[12px] mr-1">Đơn vị</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={stockQuantities[item.id]?.quantityPackages || 0}
+                                  onChange={(e) =>
+                                    handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                  }
+                                  className="w-16 border rounded px-2 py-1"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 text-red-800 rounded hover:bg-white-400"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleSubmitStock}
+                    className="px-4 py-2 text-green-800 rounded hover:bg-white-400"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}
@@ -496,7 +574,7 @@ const CompleteOrder = () => {
       {/* ICONS IN HORIZONTAL ROW */}
       <motion.div
         className="fixed right-4 z-[1000] flex gap-2"
-        style={{ bottom: "100px" }} // Fixed at bottom-100
+        style={{ bottom: "100px" }}
       >
         <button
           onClick={handleDownloadReport}
@@ -520,7 +598,9 @@ const CompleteOrder = () => {
         </button>
         <button
           onClick={isShiftIdValid ? () => { setModalType("import"); setIsModalOpen(true); } : undefined}
-          className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${!isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-200 transition-colors"}`}
+          className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${
+            !isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-200 transition-colors"
+          }`}
           title={isShiftIdValid ? "Nhập kho" : "Yêu cầu shiftId để nhập kho"}
           disabled={!isShiftIdValid}
         >
@@ -531,17 +611,14 @@ const CompleteOrder = () => {
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </button>
         {/* <button
           onClick={isShiftIdValid ? () => { setModalType("destroy"); setIsModalOpen(true); } : undefined}
-          className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${!isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-red-200 transition-colors"}`}
+          className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${
+            !isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-red-200 transition-colors"
+          }`}
           title={isShiftIdValid ? "Xóa kho" : "Yêu cầu shiftId để xóa kho"}
           disabled={!isShiftIdValid}
         >
