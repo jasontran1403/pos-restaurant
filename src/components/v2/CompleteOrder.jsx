@@ -36,7 +36,7 @@ const CompleteOrder = () => {
       params: {
         page: currentPage - 1,
         size: ITEMS_PER_PAGE,
-        shiftId: localStorage.getItem("shiftId"),
+        workerId: localStorage.getItem("workerId"),
         search: searchTerm,
       },
       headers: {
@@ -182,7 +182,7 @@ const CompleteOrder = () => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement("a");
         link.href = url;
-        link.setAttribute("download", `sales_report_${startDate}_to_${endDate}.csv`);
+        link.setAttribute("download", `sales_report_${startDate}_to_${endDate}.xlsx`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

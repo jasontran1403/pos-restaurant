@@ -31,7 +31,7 @@ const PendingOrder = ({ handleTabClick }) => {
       params: {
         page: currentPage - 1,
         size: ITEMS_PER_PAGE,
-        shiftId: localStorage.getItem("shiftId"),
+        workerId: localStorage.getItem("workerId"),
         search: searchTerm,
       },
       headers: {
