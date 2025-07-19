@@ -172,6 +172,7 @@ const CompleteOrder = () => {
       params: {
         startDate,
         endDate,
+        workerId: localStorage.getItem("workerId"),
       },
       headers: {
         "ngrok-skip-browser-warning": "69420",
