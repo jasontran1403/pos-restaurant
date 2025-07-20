@@ -164,6 +164,7 @@ const Home = () => {
     localStorage.removeItem("shiftId");
     localStorage.removeItem("workerId");
     localStorage.removeItem("isFirstShift");
+    localStorage.removeItem("lastVisit");
     window.location.href = "/";
   };
 
@@ -273,7 +274,13 @@ const Home = () => {
         localStorage.removeItem("shiftId");
         localStorage.removeItem("isFirstShift");
         resetStockAndCash();
-        toast.success("Đã đóng ca thành công");
+        toast.success("Đã đóng ca thành công", {
+          onClose: () => {
+            window.location.reload(); // Reload lại trang
+          },
+          autoClose: 1200, // 1.2 giây
+        });
+
       })
       .catch((error) => {
         console.error(error);
@@ -302,7 +309,13 @@ const Home = () => {
           localStorage.removeItem("shiftId");
           localStorage.removeItem("isFirstShift");
           resetStockAndCash();
-          toast.success("Đã đóng ca thành công");
+          toast.success("Đã đóng ca thành công", {
+            onClose: () => {
+              window.location.reload(); // Reload lại trang
+            },
+            autoClose: 1200, // 1.2 giây
+          });
+
         } else {
           setErrorMessage(response.data || "Chưa hoàn tất việc kiểm kho hoặc kiểm tiền.");
           setShowCloseShiftModal(true);
@@ -480,6 +493,11 @@ const Home = () => {
   const ref = useRef(null);
   const [scrolled, setScrolled] = useState(false);
 
+  const resetNav = () => {
+    changeShowViewTrading(1);
+    setTradingItemView(1);
+  }
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 0);
     onScroll();
@@ -529,11 +547,10 @@ const Home = () => {
                   )}
                   <button
                     onClick={performLogout}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-[15px] ${
-                      isEnabled
-                        ? "bg-gray-300 text-gray-500"
-                        : "bg-green-500 text-white hover:bg-green-600"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-[15px] ${isEnabled
+                      ? "bg-gray-300 text-gray-500"
+                      : "bg-green-500 text-white hover:bg-green-600"
+                      }`}
                     title={isEnabled ? "Đang trong ca, không thể thoát khi chưa đóng ca." : "Đăng xuất"}
                   >
                     <LogOut size={20} />
@@ -577,7 +594,7 @@ const Home = () => {
       <>
         {selectedDasTab === "Balance" && <Transaction handleTabClick={handleTabClick} />}
         {selectedDasTab === "Trading" && (
-          <Dashboard enableShift={isEnabled} tradingItemView={tradingItemView} />
+          <Dashboard enableShift={isEnabled} tradingItemView={tradingItemView} resetNav={resetNav} />
         )}
         {selectedDasTab === "Account" && <Account />}
         <div className="cover mb-2">
@@ -597,22 +614,20 @@ const Home = () => {
             <h2 className="text-xl font-semibold mb-2 text-center">{isFirstShift ? "Mở ca đầu ngày" : "Mở ca mới"}</h2>
             <div className="flex border-b">
               <button
-                className={`flex-1 py-2 text-center ${
-                  activeTab === "Cash"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
-                }`}
+                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
+                  }`}
                 onClick={() => setActiveTab("Cash")}
               >
                 Tiền mặt
               </button>
               {isFirstShift && (
                 <button
-                  className={`flex-1 py-2 text-center ${
-                    activeTab === "Stocks"
-                      ? "border-b-2 border-green-500 font-semibold text-black"
-                      : "text-gray-600 hover:text-black"
-                  }`}
+                  className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                    ? "border-b-2 border-green-500 font-semibold text-black"
+                    : "text-gray-600 hover:text-black"
+                    }`}
                   onClick={() => setActiveTab("Stocks")}
                 >
                   Kho
@@ -673,7 +688,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityStocks === 0 &&
-                                  inputFocus.stocks[`${item.id}-quantityStocks`]
+                                    inputFocus.stocks[`${item.id}-quantityStocks`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityStocks || 0
                                 }
@@ -697,7 +712,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityPackages === 0 &&
-                                  inputFocus.stocks[`${item.id}-quantityPackages`]
+                                    inputFocus.stocks[`${item.id}-quantityPackages`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityPackages || 0
                                 }
@@ -749,11 +764,10 @@ const Home = () => {
             <h2 className="text-xl font-semibold mb-2 text-center">Nhập kho đầu ca</h2>
             <div className="flex border-b">
               <button
-                className={`flex-1 py-2 text-center ${
-                  activeTab === "Cash"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
-                }`}
+                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
+                  }`}
                 onClick={() => setActiveTab("Cash")}
               >
                 Tiền mặt
@@ -818,21 +832,19 @@ const Home = () => {
             <h2 className="text-xl font-semibold mb-2 text-center">Kết ca</h2>
             <div className="flex border-b">
               <button
-                className={`flex-1 py-2 text-center ${
-                  activeTab === "Cash"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
-                }`}
+                className={`flex-1 py-2 text-center ${activeTab === "Cash"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
+                  }`}
                 onClick={() => setActiveTab("Cash")}
               >
                 Check Tiền
               </button>
               <button
-                className={`flex-1 py-2 text-center ${
-                  activeTab === "Stocks"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
-                }`}
+                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
+                  }`}
                 onClick={() => setActiveTab("Stocks")}
               >
                 Check Kho
@@ -901,7 +913,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityStocks === 0 &&
-                                  inputFocus.stocks[`${item.id}-quantityStocks`]
+                                    inputFocus.stocks[`${item.id}-quantityStocks`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityStocks || 0
                                 }
@@ -925,7 +937,7 @@ const Home = () => {
                                 min="0"
                                 value={
                                   stockQuantities[item.id]?.quantityPackages === 0 &&
-                                  inputFocus.stocks[`${item.id}-quantityPackages`]
+                                    inputFocus.stocks[`${item.id}-quantityPackages`]
                                     ? ""
                                     : stockQuantities[item.id]?.quantityPackages || 0
                                 }
@@ -997,9 +1009,8 @@ const Home = () => {
               <button
                 onClick={handleForceCloseShift}
                 disabled={!note.trim()}
-                className={`px-4 py-2 rounded ${
-                  !note.trim() ? "bg-gray-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600 text-white"
-                }`}
+                className={`px-4 py-2 rounded ${!note.trim() ? "bg-gray-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600 text-white"
+                  }`}
               >
                 Xác nhận đóng ca
               </button>

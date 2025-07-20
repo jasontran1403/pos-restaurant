@@ -197,7 +197,7 @@ input[type="number"] {
 .transaction-btn button:hover {}
 
 .transaction-btn button.glow {
-  box-shadow: 0 0 10px 5px #083158;
+  box-shadow: 0 0 10px 5px #19d963;
   /* Green glow effect */
 }
 

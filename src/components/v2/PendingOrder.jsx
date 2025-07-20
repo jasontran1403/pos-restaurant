@@ -348,18 +348,24 @@ const PendingOrder = ({ handleTabClick }) => {
             ‹
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setCurrentPage(p)}
-              className={`px-3 py-1 rounded ${p === currentPage
-                ? "bg-white text-black font-semibold"
-                : "bg-white/20 text-white"
-                }`}
-            >
-              {p}
-            </button>
-          ))}
+          {Array.from({ length: 3 }, (_, i) => {
+            let start = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
+            const page = start + i;
+            if (page > totalPages) return null;
+
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`px-3 py-1 rounded ${page === currentPage
+                  ? "bg-white text-black font-semibold"
+                  : "bg-white/20 text-white"
+                  }`}
+              >
+                {page}
+              </button>
+            );
+          })}
 
           <button
             disabled={currentPage === totalPages}
@@ -370,6 +376,7 @@ const PendingOrder = ({ handleTabClick }) => {
           </button>
         </div>
       )}
+
     </div>
   );
 };

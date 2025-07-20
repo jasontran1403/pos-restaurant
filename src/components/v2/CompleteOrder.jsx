@@ -409,17 +409,24 @@ const CompleteOrder = () => {
           >
             ‹
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setCurrentPage(p)}
-              className={`px-3 py-1 rounded ${
-                p === currentPage ? "bg-white text-black font-semibold" : "bg-white/20 text-white"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) =>
+              p === currentPage || p === currentPage - 1 || p === currentPage + 1
+            )
+            .map((p) => (
+              <button
+                key={p}
+                onClick={() => setCurrentPage(p)}
+                className={`px-3 py-1 rounded ${p === currentPage
+                    ? "bg-white text-black font-semibold"
+                    : "bg-white/20 text-white"
+                  }`}
+              >
+                {p}
+              </button>
+            ))}
+
           <button
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => p + 1)}
@@ -429,6 +436,7 @@ const CompleteOrder = () => {
           </button>
         </div>
       )}
+
 
       {/* MODAL FOR IMPORT/DESTROY/REPORT */}
       {isModalOpen && (
@@ -584,9 +592,8 @@ const CompleteOrder = () => {
         </button>
         <button
           onClick={isShiftIdValid ? () => { setModalType("import"); setIsModalOpen(true); } : undefined}
-          className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${
-            !isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-200 transition-colors"
-          }`}
+          className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${!isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-200 transition-colors"
+            }`}
           title={isShiftIdValid ? "Nhập kho" : "Yêu cầu shiftId để nhập kho"}
           disabled={!isShiftIdValid}
         >
@@ -600,29 +607,6 @@ const CompleteOrder = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </button>
-        {/* <button
-          onClick={isShiftIdValid ? () => { setModalType("destroy"); setIsModalOpen(true); } : undefined}
-          className={`bg-white/10 backdrop-blur-md text-white rounded-full p-2 ${
-            !isShiftIdValid ? "opacity-50 cursor-not-allowed" : "hover:bg-red-200 transition-colors"
-          }`}
-          title={isShiftIdValid ? "Xóa kho" : "Yêu cầu shiftId để xóa kho"}
-          disabled={!isShiftIdValid}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-        </button> */}
       </motion.div>
     </div>
   );

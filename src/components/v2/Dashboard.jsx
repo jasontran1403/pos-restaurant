@@ -8,10 +8,11 @@ import { motion, useAnimation } from "framer-motion";
 import { toast } from "react-toastify";
 import { useMediaQuery } from "react-responsive";
 
-const Dashboard = ({ tradingItemView, enableShift }) => {
+const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const controls = useAnimation();
   const cartControls = useAnimation();
   const isMobile = useMediaQuery({ maxWidth: 768 });
+  const [note, setNote] = useState(""); // Add this with other state declarations
 
   /* ------------------ STATE ------------------ */
   const { accessToken } = useAccessToken();
@@ -26,6 +27,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   const [longPressItemId, setLongPressItemId] = useState(null); // Track long-press item
   const [isLongPressActive, setIsLongPressActive] = useState(false); // Track animation state
   const [longPressedItemId, setLongPressedItemId] = useState(null); // Track the ID of the item that was long-pressed
+  const [showCashForm, setShowCashForm] = useState(false); // Track cash form visibility
+  const [cashReceived, setCashReceived] = useState(""); // Track cash received input
   const longPressTimer = useRef(null); // Timer for long-press
   const itemRefs = useRef({}); // Store refs for each item to attach event listeners
   const touchStartPos = useRef(null); // Track touch start position
@@ -34,10 +37,28 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   const sliderRef = useRef(null);
   const [dragLimit, setDragLimit] = useState(0);
 
+  useEffect(() => {
+    let config = {
+      method: 'get',
+      url: `${API_ENDPOINT}shift/is-first-shift/${localStorage.getItem("workerId")}`,
+      headers: {
+        "ngrok-skip-browser-warning": "69420",
+      }
+    };
+
+    Axios.request(config)
+      .then((response) => {
+        localStorage.setItem("isFirstShift", response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+
+  }, []);
+
   // Update cartRef whenever cart changes
   useEffect(() => {
     cartRef.current = cart;
-    console.log("Cart updated in ref:", cart); // Debug log
   }, [cart]);
 
   useEffect(() => {
@@ -52,7 +73,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     })
       .then((res) => {
         setCart(res.data);
-        console.log("Loaded cart from API:", res.data); // Debug log
       })
       .catch((error) => {
         Swal.fire({
@@ -77,8 +97,9 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       headers: { "ngrok-skip-browser-warning": "69420" },
     })
       .then((res) => {
-        console.log("Menu data:", res.data); // Debug log
-        setMenu(res.data);
+        // Filter out items marked as ingredients
+        const filteredMenu = res.data.filter((item) => (item.name !== "Bánh mỳ hotdogs" && item.name !== "Bánh mỳ hamburger"));
+        setMenu(filteredMenu);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -115,23 +136,33 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     return m;
   }, [cart]);
 
-  const buildPayload = (status) => ({
-    shiftId: localStorage.getItem("shiftId") || 0,
-    orderId: localStorage.getItem("orderId") || 0,
-    status,
-    listItem: cart.map(({ id, qty }) => ({
-      productId: id,
-      quantity: qty,
-    })),
-  });
+  const buildPayload = (status, cashReceived = 0) => {
+    const total = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
+    const payback = Math.max(0, (parseFloat(cashReceived) || 0) - total);
 
-  const submitBill = (status, successMsg) => {
+    return {
+      shiftId: localStorage.getItem("shiftId") || 0,
+      orderId: localStorage.getItem("orderId") || 0,
+      status,
+      note, // Include the note in payload
+      customerAmount: parseFloat(cashReceived) || 0,
+      payback,
+      listItem: cart.map(({ id, qty }) => ({
+        productId: id,
+        quantity: qty,
+      })),
+    };
+  };
+
+  const submitBill = (status, successMsg, cashReceived = 0) => {
     if (!enableShift) {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi thao tác.");
       return;
     }
 
-    Axios.post(`${API_ENDPOINT}shift/save-bill`, buildPayload(status), {
+    const payload = buildPayload(status, cashReceived);
+
+    Axios.post(`${API_ENDPOINT}shift/save-bill`, payload, {
       headers: {
         "Content-Type": "application/json",
         "ngrok-skip-browser-warning": "69420",
@@ -146,9 +177,11 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
           timerProgressBar: true,
         });
         handleClearCart();
+        setShowCashForm(false);
+        setCashReceived("");
+        resetNav();
       })
       .catch((e) => {
-        console.log("Error saving bill:", e); // Debug log
         Swal.fire({
           title: "Đã xảy ra lỗi!",
           icon: "error",
@@ -161,8 +194,27 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   const handleBank = () =>
     submitBill("bank", "Tạo đơn hàng thành công, thanh toán Chuyển Khoản!");
 
-  const handleCash = () =>
-    submitBill("cash", "Tạo đơn hàng thành công, thanh toán Tiền Mặt!");
+  const handleCash = () => {
+    if (cart.length === 0) {
+      toast.error("Giỏ hàng trống, không thể thanh toán.");
+      return;
+    }
+    setShowCashForm(true); // Show cash form
+  };
+
+  const handleCashSubmit = (e) => {
+    e.preventDefault();
+    const cash = parseFloat(cashReceived);
+    const total = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
+
+    if (isNaN(cash) || cash < total) {
+      toast.error("Số tiền nhận không hợp lệ hoặc không đủ.");
+      return;
+    }
+
+    submitBill("cash", "Tạo đơn hàng thành công, thanh toán Tiền Mặt!", cash);
+    setNote(""); // Reset note after submission
+  };
 
   const handleSave = () =>
     submitBill("pending", "Lưu đơn hàng thành công!");
@@ -172,7 +224,9 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
     setCart([]);
     localStorage.removeItem("orderId");
     setShowCartPopup(false);
-    console.log("Cart cleared"); // Debug log
+    setShowCashForm(false);
+    setCashReceived("");
+    setNote(""); // Reset note when clearing cart
   };
 
   const actionButtons = [
@@ -274,11 +328,9 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       if (idx > -1) {
         const updated = [...prev];
         updated[idx].qty += 1;
-        console.log("Updated cart (increment):", updated); // Debug log
         return updated;
       }
       const updatedCart = [...prev, { ...item, qty: 1 }];
-      console.log("Updated cart (add):", updatedCart); // Debug log
       return updatedCart;
     });
     setFocusedItem(item.id);
@@ -300,7 +352,6 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
         String(item.id) === String(itemId) ? { ...item, qty: item.qty + 1 } : item
       )
     );
-    console.log("Increased quantity for item:", itemId); // Debug log
   };
 
   const handleDecrease = (itemId) => {
@@ -313,13 +364,11 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       const existingItem = prev.find((item) => String(item.id) === String(itemId));
       if (existingItem.qty <= 1) {
         const updatedCart = prev.filter((item) => String(item.id) !== String(itemId));
-        console.log("Cart after removal (decrease):", updatedCart); // Debug log
         return updatedCart;
       }
       const updatedCart = prev.map((item) =>
         String(item.id) === String(itemId) ? { ...item, qty: item.qty - 1 } : item
       );
-      console.log("Cart after decrease:", updatedCart); // Debug log
       return updatedCart;
     });
   };
@@ -342,11 +391,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi xử lý giỏ hàng.");
       return;
     }
-    console.log("Removing item:", itemId); // Debug log
     setCart((prev) => {
-      console.log("Cart before removal:", prev); // Debug log
       const updatedCart = prev.filter((c) => String(c.id) !== String(itemId));
-      console.log("Cart after removal:", updatedCart); // Debug log
       return updatedCart;
     });
   };
@@ -374,13 +420,11 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       return;
     }
 
-    console.log("Starting long-press for item:", normalizedItemId); // Debug log
     touchStartPos.current = {
       x: e.touches ? e.touches[0].clientX : e.clientX,
       y: e.touches ? e.touches[0].clientY : e.clientY,
     }; // Store touch start position
     longPressTimer.current = setTimeout(() => {
-      console.log("Long-press triggered for item:", normalizedItemId); // Debug log
       setLongPressItemId(normalizedItemId);
       setIsLongPressActive(true);
       setLongPressedItemId(normalizedItemId); // Set the ID of the long-pressed item
@@ -411,12 +455,10 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
   /* ------------------ EVENT LISTENER SETUP FOR TOUCH/CONTEXT ------------------ */
   useEffect(() => {
     const handleTouchStart = (itemId) => (e) => {
-      console.log("Touch start on item:", itemId, { target: e.target.tagName }); // Debug log
       startLongPress(itemId, e);
     };
 
     const handleTouchEnd = (e) => {
-      console.log("Touch end", { target: e.target.tagName }); // Debug log
       cancelLongPress(e);
     };
 
@@ -426,10 +468,8 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
       const currentY = e.touches[0].clientY;
       const deltaX = Math.abs(currentX - touchStartPos.current.x);
       const deltaY = Math.abs(currentY - touchStartPos.current.y);
-      console.log("Touch move detected:", { deltaX, deltaY }); // Debug log
       // Ignore small movements (increased to 15 pixels)
       if (deltaX > 15 || deltaY > 15) {
-        console.log("Canceling long-press due to significant touch move"); // Debug log
         cancelLongPress(e);
       }
     };
@@ -588,9 +628,20 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                   </motion.ul>
                 </div>
                 <div className="border-t border-black/10 pt-4 mt-4">
+                  {/* Always visible note input */}
+                  <div className="mb-4">
+                    <label className="text-sm text-black">Ghi chú:</label>
+                    <input
+                      type="text"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Nhập ghi chú (nếu có)"
+                      className="w-full p-2 border rounded text-black text-sm mt-1"
+                    />
+                  </div>
+
                   {(() => {
                     const subtotal = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
-                    // const vat = subtotal * 0.1;
                     const vat = 0;
                     const total = subtotal + vat;
 
@@ -603,32 +654,87 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                         ].map(([label, val, bold]) => (
                           <div
                             key={label}
-                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""
-                              }`}
+                            className={`flex items-center w-full min-w-0 justify-between ${bold ? "font-semibold" : ""}`}
                           >
                             <span className="flex-1 min-w-0 truncate pr-2 text-black">
                               {label}
                             </span>
                             <span
-                              className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-black" : "text-black"
-                                }`}
+                              className={`flex-shrink-0 whitespace-nowrap ${bold ? "text-black" : "text-black"}`}
                             >
                               {formatCurrency(val)}
                             </span>
                           </div>
                         ))}
-                        <div className="w-full flex justify-center gap-4 mt-2 flex-wrap">
-                          {actionButtons.map(({ icon, color, onClick, title }) => (
-                            <button
-                              key={title}
-                              className={`w-10 h-10 ${color} hover:brightness-110 text-white rounded-full flex items-center justify-center`}
-                              onClick={onClick}
-                              title={title}
-                            >
-                              {icon}
-                            </button>
-                          ))}
-                        </div>
+
+                        {/* Cash payment form (shown only when cash payment is selected) */}
+                        {showCashForm && (
+                          <div className="mt-4 p-3 bg-gray-100 rounded-lg">
+                            <div className="mb-3">
+                              <label className="text-sm text-black block mb-1">Số tiền nhận:</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="number"
+                                  value={cashReceived}
+                                  onChange={(e) => setCashReceived(e.target.value)}
+                                  placeholder="Nhập số tiền"
+                                  className="flex-1 p-2 border rounded text-black text-sm"
+                                  min="0"
+                                  step="1000"
+                                />
+                                <button
+                                  onClick={() => {
+                                    setCashReceived(total);
+                                  }}
+                                  className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded whitespace-nowrap"
+                                >
+                                  Thanh toán đủ
+                                </button>
+                              </div>
+                            </div>
+                            <div className="mb-3">
+                              <label className="text-sm text-black">Tiền trả lại:</label>
+                              <span className="text-sm text-black block">
+                                {formatCurrency(
+                                  Math.max(0, (parseFloat(cashReceived) || 0) - total)
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleCashSubmit}
+                                className="flex-1 text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded"
+                              >
+                                Xác nhận thanh toán
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowCashForm(false);
+                                  setCashReceived("");
+                                }}
+                                className="flex-1 text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded"
+                              >
+                                Hủy
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action buttons (shown when cash form is not visible) */}
+                        {!showCashForm && (
+                          <div className="w-full flex justify-center gap-4 mt-4 flex-wrap">
+                            {actionButtons.map(({ icon, color, onClick, title }) => (
+                              <button
+                                key={title}
+                                className={`w-10 h-10 ${color} hover:brightness-110 text-white rounded-full flex items-center justify-center`}
+                                onClick={onClick}
+                                title={title}
+                              >
+                                {icon}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </>
                     );
                   })()}
@@ -663,12 +769,10 @@ const Dashboard = ({ tradingItemView, enableShift }) => {
                   <motion.div
                     key={item.id}
                     ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item
-                    className={`cursor-pointer relative no-select ${isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""
-                      }`}
+                    className={`cursor-pointer relative no-select ${isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent click event bubbling
                       if (longPressedItemId === String(item.id)) {
-                        console.log("Blocked click due to recent long-press:", item.id); // Debug log
                         return;
                       }
                       handleAdd(item);
