@@ -672,11 +672,13 @@ const Home = () => {
                 ) : (
                   <div className="grid grid-cols-1 gap-2">
                     {menuItems
-                      .filter(
-                        (item) =>
-                          !item.name.toLowerCase().includes("Double Cheeseburger") &&
-                          !item.name.toLowerCase().includes("Double Chickenburger")
-                      )
+                      .filter((item) => {
+                        const name = item.name.toLowerCase().trim();
+                        return (
+                          name !== "double cheeseburger" &&
+                          name !== "double chickenburger"
+                        );
+                      })
                       .map((item) => (
                         <div key={item.id} className="flex items-center justify-between gap-2">
                           <span className="flex-1 text-[12px]">{item.name}</span>
@@ -897,11 +899,13 @@ const Home = () => {
                 ) : (
                   <div className="grid grid-cols-1 gap-2">
                     {menuItems
-                      .filter(
-                        (item) =>
-                          !item.name.toLowerCase().includes("double chesseburger") &&
-                          !item.name.toLowerCase().includes("double chickenburger")
-                      )
+                      .filter((item) => {
+                        const name = item.name.toLowerCase().trim();
+                        return (
+                          name !== "double cheeseburger" &&
+                          name !== "double chickenburger"
+                        );
+                      })
                       .map((item) => (
                         <div key={item.id} className="flex items-center justify-between gap-2">
                           <span className="flex-1 text-[12px]">{item.name}</span>
