@@ -674,8 +674,8 @@ const Home = () => {
                     {menuItems
                       .filter(
                         (item) =>
-                          !item.name.toLowerCase().includes("double chesseburger") &&
-                          !item.name.toLowerCase().includes("double chickenburger")
+                          !item.name.toLowerCase().includes("Double Cheeseburger") &&
+                          !item.name.toLowerCase().includes("Double Chickenburger")
                       )
                       .map((item) => (
                         <div key={item.id} className="flex items-center justify-between gap-2">
