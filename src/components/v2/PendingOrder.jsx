@@ -206,8 +206,8 @@ const PendingOrder = ({ handleTabClick }) => {
             {(!expandedOrder || expandedOrder === order.orderId) && (
               <motion.div
                 className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-2 grid grid-cols-3 items-start
-                           border border-white/10 cursor-pointer
-                           ${expandedOrder === order.orderId ? "bg-[#76807A]/80 col-span-full" : "bg-[#76807A80]/50"}`}
+                   border border-white/10 cursor-pointer
+                   ${expandedOrder === order.orderId ? "bg-[#76807A]/80 col-span-full" : "bg-[#76807A80]/50"}`}
                 onClick={() => handleOrderClick(order.orderId)}
                 initial={{ scale: 1 }}
                 animate={{
@@ -310,7 +310,7 @@ const PendingOrder = ({ handleTabClick }) => {
                         </div>
                       ) : (
                         <AnimatePresence>
-                          {orderDetails?.map((item) => (
+                          {orderDetails?.filter(item => !["Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(item.name)).map((item) => (
                             <motion.div
                               key={item.id}
                               className="flex justify-between items-center py-2 border-b border-white/5 last:border-b-0"
@@ -322,7 +322,7 @@ const PendingOrder = ({ handleTabClick }) => {
                             >
                               <span className="text-white">{item.name} × {item.qty}</span>
                               <span className="text-green-200">
-                                {formatNumber(item.price * item.qty)} đ
+                                {formatNumber(item.price * item.qty)} đ ({item.type})
                               </span>
                             </motion.div>
                           ))}

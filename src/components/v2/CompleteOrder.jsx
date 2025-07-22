@@ -20,9 +20,17 @@ const CompleteOrder = () => {
   const [modalType, setModalType] = useState(null); // "import", "destroy", or "report"
   const [menuItems, setMenuItems] = useState([]);
   const [stockQuantities, setStockQuantities] = useState({});
+
+  const today = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).split("/").join("-"); // Converts to YYYY-MM-DD
+
   const [reportDateRange, setReportDateRange] = useState({
-    startDate: "",
-    endDate: "",
+    startDate: today,
+    endDate: today,
   });
 
   /* ----------- Lấy dữ liệu ----------- */
@@ -157,11 +165,12 @@ const CompleteOrder = () => {
   };
 
   const handleSubmitReport = () => {
-    const { startDate, endDate } = reportDateRange;
-    if (!startDate || !endDate) {
-      toast.error("Vui lòng chọn cả ngày bắt đầu và ngày kết thúc!");
-      return;
-    }
+    console.log(today);
+    let { startDate, endDate } = reportDateRange;
+
+    // If either date is empty, set it to today
+    if (!startDate) startDate = today;
+    if (!endDate) endDate = today;
 
     if (new Date(startDate) > new Date(endDate)) {
       toast.error("Ngày bắt đầu không thể lớn hơn ngày kết thúc!");
@@ -301,8 +310,8 @@ const CompleteOrder = () => {
             {(!expandedOrder || expandedOrder === order.orderId) && (
               <motion.div
                 className={`w-[95svw] sm:w-full backdrop-blur-md rounded-2xl shadow-md p-3 grid grid-cols-3 items-start
-                           border border-white/10 cursor-pointer
-                           ${expandedOrder === order.orderId ? "bg-[#76807A]/80 col-span-full" : "bg-[#76807A80]/50"}`}
+                   border border-white/10 cursor-pointer
+                   ${expandedOrder === order.orderId ? "bg-[#76807A]/80 col-span-full" : "bg-[#76807A80]/50"}`}
                 onClick={() => handleOrderClick(order.orderId)}
                 initial={{ scale: 1 }}
                 animate={{
@@ -374,7 +383,7 @@ const CompleteOrder = () => {
                         </div>
                       ) : (
                         <AnimatePresence>
-                          {orderDetails?.map((item) => (
+                          {orderDetails?.filter(item => !["Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(item.name)).map((item) => (
                             <motion.div
                               key={item.id}
                               className="flex justify-between items-center py-2 border-b border-white/5 last:border-b-0"
@@ -385,7 +394,7 @@ const CompleteOrder = () => {
                               layout
                             >
                               <span className="text-white">{item.name} × {item.qty}</span>
-                              <span className="text-green-200">{formatNumber(item.price * item.qty)} đ</span>
+                              <span className="text-green-200">{formatNumber(item.price * item.qty)} đ ({item.type})</span>
                             </motion.div>
                           ))}
                         </AnimatePresence>
@@ -419,8 +428,8 @@ const CompleteOrder = () => {
                 key={p}
                 onClick={() => setCurrentPage(p)}
                 className={`px-3 py-1 rounded ${p === currentPage
-                    ? "bg-white text-black font-semibold"
-                    : "bg-white/20 text-white"
+                  ? "bg-white text-black font-semibold"
+                  : "bg-white/20 text-white"
                   }`}
               >
                 {p}

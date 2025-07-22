@@ -168,18 +168,28 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
         "ngrok-skip-browser-warning": "69420",
       },
     })
-      .then(() => {
-        Swal.fire({
-          title: successMsg,
-          icon: "success",
-          timer: 2400,
-          showConfirmButton: false,
-          timerProgressBar: true,
-        });
-        handleClearCart();
-        setShowCashForm(false);
-        setCashReceived("");
-        resetNav();
+      .then((response) => {
+        if (response.data === "Lưu đơn hàng thành công") {
+          Swal.fire({
+            title: response.data,
+            icon: "success",
+            timer: 2400,
+            showConfirmButton: false,
+            timerProgressBar: true,
+          });
+          handleClearCart();
+          setShowCashForm(false);
+          setCashReceived("");
+          resetNav();
+        } else {
+          Swal.fire({
+            title: response.data,
+            icon: "error",
+            timer: 2400,
+            showConfirmButton: false,
+            timerProgressBar: true,
+          });
+        }
       })
       .catch((e) => {
         Swal.fire({
