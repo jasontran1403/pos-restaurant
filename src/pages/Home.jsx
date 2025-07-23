@@ -361,6 +361,22 @@ const Home = () => {
       toast.error("Vui lòng nhập tên nhân viên.");
       return;
     }
+
+    const isFirstShift = localStorage.getItem("isFirstShift") === "true";
+    if (isFirstShift) {
+      // Check if all stock quantities are zero
+      const allStocksZero = menuItems.every(
+        (item) =>
+          (stockQuantities[item.id]?.quantityStocks || 0) === 0 &&
+          (stockQuantities[item.id]?.quantityPackages || 0) === 0
+      );
+      if (allStocksZero) {
+        toast.error("Ca đầu ngày bắt buộc nhập dữ liệu kho.");
+        setActiveTab("Stocks");
+        return;
+      }
+    }
+
     const totalAmount = calculateTotal();
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
@@ -373,7 +389,6 @@ const Home = () => {
         denomination: parseInt(key),
         quantity: parseInt(cashInputs[key]),
       }));
-    const isFirstShift = localStorage.getItem("isFirstShift") === "true";
     const data = JSON.stringify({
       workerId: parseInt(workerId),
       fullName: fullName,
