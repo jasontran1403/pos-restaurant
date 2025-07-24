@@ -3,26 +3,33 @@ import { Navigate, useRoutes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Error404 from "./pages/Error404";
 import Home from "./pages/Home";
+import NewHome from "./pages/NewHome"; // Make sure to import NewHome
 import { WalletContext } from "./components/WalletContext";
 
 export default function Router() {
-    // Initialize with the value from localStorage
-    const { isConnected } =
-        useContext(WalletContext);
+    const { isConnected } = useContext(WalletContext);
+    const [newHome, setNewHome] = useState(false);
 
     useEffect(() => {
-        const SIX_HOURS = 6 * 60 * 60 * 1000; // 6 tiếng
+        // Get username from localStorage
+        const isNewHome = localStorage.getItem("newHome");
+        console.log(isNewHome);
+        if (isNewHome == 1) {
+            setNewHome(true);
+        } else {
+            setNewHome(false);
+        }
+
+        const SIX_HOURS = 6 * 60 * 60 * 1000; // 6 hours
         const lastVisit = localStorage.getItem("lastVisit");
 
         if (lastVisit) {
             const timePassed = Date.now() - parseInt(lastVisit, 10);
             if (timePassed > SIX_HOURS) {
-                // Cập nhật lại thời gian truy cập mới trước khi reload
                 localStorage.setItem("lastVisit", Date.now().toString());
                 window.location.reload();
             }
         } else {
-            // Lần đầu truy cập: ghi lại thời gian
             localStorage.setItem("lastVisit", Date.now().toString());
         }
     }, []);
@@ -34,7 +41,9 @@ export default function Router() {
         },
         {
             path: "/home",
-            element: isConnected ? <Home /> : <Navigate to="/" />
+            element: isConnected 
+                ? (newHome ? <NewHome /> : <Home />)
+                : <Navigate to="/" />
         },
         {
             path: '/404',

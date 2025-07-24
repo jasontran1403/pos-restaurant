@@ -393,7 +393,7 @@ const CompleteOrder = () => {
                               exit="exit"
                               layout
                             >
-                              <span className="text-white">{item.name} × {item.qty}</span>
+                              <span className="text-white w-[50%] break-words">{item.name} × {item.qty}</span>
                               <span className="text-green-200">{formatNumber(item.price * item.qty)} đ ({item.type})</span>
                             </motion.div>
                           ))}

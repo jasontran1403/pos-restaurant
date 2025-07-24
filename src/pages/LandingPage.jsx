@@ -31,6 +31,7 @@ const LandingPage = () => {
           localStorage.setItem("workerId", response.data.workerId);
           localStorage.setItem("displayName", response.data.message);
           localStorage.setItem("isFirstShift", response.data.firstShift);
+          localStorage.setItem("newHome", response.data.newHome);
           localStorage.setItem("lastVisit", Date.now().toString());
           window.location.href = "/home";
         } else {

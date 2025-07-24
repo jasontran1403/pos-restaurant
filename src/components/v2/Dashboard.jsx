@@ -92,8 +92,24 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     if (loading) return;
     setLoading(true);
 
-    const menuType = tradingItemView === 4 ? 100 : (tradingItemView - 1) * 10;
-    Axios.get(`${API_ENDPOINT}shift/menu/${menuType}`, {
+    const newHome = localStorage.getItem("newHome");
+
+    let menuType;
+    if (newHome == 0) {
+      menuType = tradingItemView === 4 ? 100 : (tradingItemView - 1) * 10;
+    } else {
+      menuType = tradingItemView === 1 ? 1 : 2;
+    }
+
+    let url = "";
+
+    if (newHome === "1") {
+      url = `${API_ENDPOINT}shift/ff-menu/0/${menuType}`;
+    } else {
+      url = `${API_ENDPOINT}shift/menu/${menuType}`;
+    }
+
+    Axios.get(url, {
       headers: { "ngrok-skip-browser-warning": "69420" },
     })
       .then((res) => {

@@ -88,6 +88,7 @@ const PendingOrder = ({ handleTabClick }) => {
             setExpandedOrder(null);
             setOrderDetails(null);
             fetchOrders();
+            localStorage.removeItem("orderId");
             Swal.fire({
               title: "Xóa đơn hàng thành công!",
               icon: "success",
@@ -320,7 +321,7 @@ const PendingOrder = ({ handleTabClick }) => {
                               exit="exit"
                               layout
                             >
-                              <span className="text-white">{item.name} × {item.qty}</span>
+                              <span className="text-white w-[50%] break-words">{item.name} × {item.qty}</span>
                               <span className="text-green-200">
                                 {formatNumber(item.price * item.qty)} đ ({item.type})
                               </span>
