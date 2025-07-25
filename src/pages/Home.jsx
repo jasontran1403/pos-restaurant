@@ -61,6 +61,7 @@ const Home = () => {
   const [currentTime, setCurrentTime] = useState("");
   const [isEnabled, setIsEnabled] = useState(localStorage.getItem("shiftId") ? true : false);
   const [isFirstShift, setIsFirstShift] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (e, key) => {
     const value = e.target.value;
@@ -208,6 +209,7 @@ const Home = () => {
       toast.error("Ca làm việc không hợp lệ. Vui lòng mở ca trước khi kiểm.");
       return;
     }
+    setIsSubmitting(true);
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
       quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
@@ -261,6 +263,8 @@ const Home = () => {
       .catch((error) => {
         console.error(error);
         toast.error(error.response?.data?.message || "Đã xảy ra lỗi khi kiểm tra");
+      }).finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -385,6 +389,7 @@ const Home = () => {
       }
     }
 
+    setIsSubmitting(true);
     const totalAmount = calculateTotal();
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
@@ -434,6 +439,9 @@ const Home = () => {
       .catch((error) => {
         console.error("Open shift error:", error.response?.data);
         toast.error(error.response?.data || "Đã xảy ra lỗi khi mở ca làm việc");
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -457,6 +465,7 @@ const Home = () => {
       toast.error("Vui lòng nhập tên nhân viên.");
       return;
     }
+    setIsSubmitting(true);
     const totalAmount = calculateTotal();
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
@@ -505,6 +514,9 @@ const Home = () => {
       .catch((error) => {
         console.error("Open shift error:", error.response?.data);
         toast.error(error.response?.data || "Đã xảy ra lỗi khi mở ca làm việc");
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -784,7 +796,8 @@ const Home = () => {
               </button>
               <button
                 onClick={handleConfirmOpenShift}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                disabled={isSubmitting}
+                className={`px-4 py-2 rounded ${isSubmitting ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"}`}
               >
                 Xác nhận mở ca
               </button>
@@ -946,7 +959,8 @@ const Home = () => {
               </button>
               <button
                 onClick={handleConfirmInitialStock}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                disabled={isSubmitting}
+                className={`px-4 py-2 rounded ${isSubmitting ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"}`}
               >
                 Xác nhận mở ca
               </button>
@@ -1105,7 +1119,8 @@ const Home = () => {
               </button>
               <button
                 onClick={handleCheckCashAndStock}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                disabled={isSubmitting}
+                className={`px-4 py-2 rounded ${isSubmitting ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"}`}
               >
                 Xác nhận kiểm tra
               </button>

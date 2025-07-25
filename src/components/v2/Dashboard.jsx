@@ -29,6 +29,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const [longPressedItemId, setLongPressedItemId] = useState(null); // Track the ID of the item that was long-pressed
   const [showCashForm, setShowCashForm] = useState(false); // Track cash form visibility
   const [cashReceived, setCashReceived] = useState(""); // Track cash received input
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track API submission status
   const longPressTimer = useRef(null); // Timer for long-press
   const itemRefs = useRef({}); // Store refs for each item to attach event listeners
   const touchStartPos = useRef(null); // Track touch start position
@@ -177,6 +178,10 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       return;
     }
 
+    if (isSubmitting) return; // Prevent multiple submissions
+
+    setIsSubmitting(true); // Set loading state
+
     const payload = buildPayload(status, cashReceived);
 
     Axios.post(`${API_ENDPOINT}shift/save-bill`, payload, {
@@ -215,6 +220,9 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
           timer: 2400,
           showConfirmButton: false,
         });
+      })
+      .finally(() => {
+        setIsSubmitting(false); // Reset loading state
       });
   };
 
@@ -231,6 +239,8 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
 
   const handleCashSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return; // Prevent submission if already in progress
+
     const cash = parseFloat(cashReceived);
     const total = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
 
@@ -277,6 +287,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       color: "bg-blue-600",
       onClick: handleBank,
       title: "Bank",
+      disabled: isSubmitting, // Disable during submission
     },
     {
       icon: (
@@ -298,6 +309,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       color: "bg-yellow-600",
       onClick: handleCash,
       title: "Cash",
+      disabled: isSubmitting, // Disable during submission
     },
     {
       icon: (
@@ -319,6 +331,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       color: "bg-green-600",
       onClick: handleSave,
       title: "Save",
+      disabled: isSubmitting, // Disable during submission
     },
     {
       icon: (
@@ -340,6 +353,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       color: "bg-orange-600",
       onClick: handleClearCart,
       title: "Clear",
+      disabled: isSubmitting, // Disable during submission
     },
   ];
 
@@ -606,7 +620,9 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                           initial={{ opacity: 0, x: 30 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -30 }}
-                          className="flex justify-between items-center pb-3 border-b border-black/10 last:border-b-0"
+                          className="flex justify-between items-center pb Lillll
+
+                          pb-3 border-b border-black/10 last:border-b-0"
                         >
                           <span className="break-words max-w-[30%] text-[14px] text-black">
                             {c.name} × {c.qty}
@@ -702,6 +718,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                                     setCashReceived(total);
                                   }}
                                   className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded whitespace-nowrap"
+                                  disabled={isSubmitting}
                                 >
                                   Thanh toán đủ
                                 </button>
@@ -719,6 +736,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                               <button
                                 onClick={handleCashSubmit}
                                 className="flex-1 text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded"
+                                disabled={isSubmitting} // Disable during submission
                               >
                                 Xác nhận thanh toán
                               </button>
@@ -728,6 +746,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                                   setCashReceived("");
                                 }}
                                 className="flex-1 text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded"
+                                disabled={isSubmitting}
                               >
                                 Hủy
                               </button>
@@ -738,12 +757,13 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                         {/* Action buttons (shown when cash form is not visible) */}
                         {!showCashForm && (
                           <div className="w-full flex justify-center gap-4 mt-4 flex-wrap">
-                            {actionButtons.map(({ icon, color, onClick, title }) => (
+                            {actionButtons.map(({ icon, color, onClick, title, disabled }) => (
                               <button
                                 key={title}
-                                className={`w-10 h-10 ${color} hover:brightness-110 text-white rounded-full flex items-center justify-center`}
+                                className={`w-10 h-10 ${color} ${disabled ? "opacity-50 cursor-not-allowed" : "hover:brightness-110"} text-white rounded-full flex items-center justify-center`}
                                 onClick={onClick}
                                 title={title}
+                                disabled={disabled} // Apply disabled state
                               >
                                 {icon}
                               </button>

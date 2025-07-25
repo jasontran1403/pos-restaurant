@@ -20,6 +20,7 @@ const CompleteOrder = () => {
   const [modalType, setModalType] = useState(null); // "import", "destroy", or "report"
   const [menuItems, setMenuItems] = useState([]);
   const [stockQuantities, setStockQuantities] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const today = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -106,7 +107,11 @@ const CompleteOrder = () => {
     }).format(parseFloat(n));
 
   const toggleStatus = (orderId, currentStatus) => {
+    if (isSubmitting) return; // ✅ ngăn click nếu đang xử lý
+    setIsSubmitting(true);
+
     const newStatus = currentStatus === "BANK" ? "CASH" : "BANK";
+
     Swal.fire({
       title: "Xác nhận thay đổi trạng thái?",
       text: `Bạn muốn chuyển sang ${newStatus}?`,
@@ -134,7 +139,12 @@ const CompleteOrder = () => {
               timer: 1200,
               showConfirmButton: false,
             })
-          );
+          )
+          .finally(() => {
+            setIsSubmitting(false);
+          });
+      } else {
+        setIsSubmitting(false); // ✅ Trả lại nếu người dùng cancel
       }
     });
   };
@@ -227,6 +237,8 @@ const CompleteOrder = () => {
       })),
     };
 
+    setIsSubmitting(true);
+
     const endpoint = modalType === "import" ? "shift/import-stock" : "shift/destroy-product";
     Axios.post(`${API_ENDPOINT}${endpoint}/${localStorage.getItem("shiftId")}`, payload, {
       headers: {
@@ -257,6 +269,8 @@ const CompleteOrder = () => {
           timer: 1200,
           showConfirmButton: false,
         });
+      }).finally(() => {
+        setIsSubmitting(false);
       });
   };
 
@@ -338,9 +352,10 @@ const CompleteOrder = () => {
                 </div>
                 <div className="text-right flex flex-col items-end mt-2">
                   <span
-                    className="text-green-300"
+                    className={`text-green-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                     title={order.status === "CASH" ? "Tiền mặt" : "Chuyển khoản"}
                     onClick={(e) => {
+                      if (isSubmitting) return;
                       e.stopPropagation();
                       toggleStatus(order.orderId, order.status);
                     }}
@@ -563,7 +578,8 @@ const CompleteOrder = () => {
                   </button>
                   <button
                     onClick={handleSubmitStock}
-                    className="px-4 py-2 text-green-800 rounded hover:bg-white-400"
+                    disabled={isSubmitting}
+                    className={`px-4 py-2 text-green-800 rounded hover:bg-white-400 ${isSubmitting ? "bg-gray-300 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600"}`}
                   >
                     Xác nhận
                   </button>
