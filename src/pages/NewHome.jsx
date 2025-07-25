@@ -196,6 +196,12 @@ const NewHome = () => {
       toast.error("Ca làm việc không hợp lệ. Vui lòng mở ca trước khi kiểm.");
       return;
     }
+
+    if (localStorage.getItem("newHome") == 1) {
+      toast.error("Tài khoản không thể đóng ca.");
+      return;
+    }
+
     const stockItems = menuItems.map((item) => ({
       productId: parseInt(item.id),
       quantityPackages: parseInt(stockQuantities[item.id]?.quantityStocks || 0),
@@ -393,6 +399,7 @@ const NewHome = () => {
       workerId: parseInt(workerId),
       fullName: fullName,
       totalAmount,
+      source: localStorage.getItem("newHome") == 0 ? 0 : 1,
       stocks: isFirstShift ? { items: stockItems } : { items: [] }, // Send stock only for first shift
       cashDetails,
     });

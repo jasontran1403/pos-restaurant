@@ -13,7 +13,6 @@ export default function Router() {
     useEffect(() => {
         // Get username from localStorage
         const isNewHome = localStorage.getItem("newHome");
-        console.log(isNewHome);
         if (isNewHome == 1) {
             setNewHome(true);
         } else {

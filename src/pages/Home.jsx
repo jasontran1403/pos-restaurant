@@ -60,6 +60,7 @@ const Home = () => {
   const [tradingItemView, setTradingItemView] = useState(1);
   const [currentTime, setCurrentTime] = useState("");
   const [isEnabled, setIsEnabled] = useState(localStorage.getItem("shiftId") ? true : false);
+  const [isFirstShift, setIsFirstShift] = useState(true);
 
   const handleInputChange = (e, key) => {
     const value = e.target.value;
@@ -154,6 +155,17 @@ const Home = () => {
       noteInputRef.current.focus();
     }
   }, [showErrorModal]);
+
+  useEffect(() => {
+    // Reset stock quantities when isFirstShift changes
+    if (!isFirstShift) {
+      const initialQuantities = {};
+      menuItems.forEach((item) => {
+        initialQuantities[item.id] = { quantityStocks: 0, quantityPackages: 0 };
+      });
+      setStockQuantities(initialQuantities);
+    }
+  }, [isFirstShift, menuItems]);
 
   const performLogout = () => {
     if (isEnabled) {
@@ -276,11 +288,10 @@ const Home = () => {
         resetStockAndCash();
         toast.success("Đã đóng ca thành công", {
           onClose: () => {
-            window.location.reload(); // Reload lại trang
+            window.location.reload();
           },
-          autoClose: 1200, // 1.2 giây
+          autoClose: 1200,
         });
-
       })
       .catch((error) => {
         console.error(error);
@@ -311,11 +322,10 @@ const Home = () => {
           resetStockAndCash();
           toast.success("Đã đóng ca thành công", {
             onClose: () => {
-              window.location.reload(); // Reload lại trang
+              window.location.reload();
             },
-            autoClose: 1200, // 1.2 giây
+            autoClose: 1200,
           });
-
         } else {
           setErrorMessage(response.data || "Chưa hoàn tất việc kiểm kho hoặc kiểm tiền.");
           setShowCloseShiftModal(true);
@@ -362,9 +372,7 @@ const Home = () => {
       return;
     }
 
-    const isFirstShift = localStorage.getItem("isFirstShift") === "true";
     if (isFirstShift) {
-      // Check if all stock quantities are zero
       const allStocksZero = menuItems.every(
         (item) =>
           (stockQuantities[item.id]?.quantityStocks || 0) === 0 &&
@@ -393,7 +401,8 @@ const Home = () => {
       workerId: parseInt(workerId),
       fullName: fullName,
       totalAmount,
-      stocks: isFirstShift ? { items: stockItems } : { items: [] }, // Send stock only for first shift
+      source: localStorage.getItem("newHome") == 0 ? 0 : 1,
+      stocks: isFirstShift ? { items: stockItems } : { items: [] },
       cashDetails,
     });
     let config = {
@@ -410,7 +419,7 @@ const Home = () => {
         if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công." || response.data.message === "") {
           toast.success("Đã bắt đầu ca");
           localStorage.setItem("shiftId", response.data.shiftId);
-          localStorage.setItem("isFirstShift", false); // Set to false after opening first shift
+          localStorage.setItem("isFirstShift", isFirstShift);
           localStorage.setItem("displayName", response.data.fullName);
           setDisplayName(response.data.fullName);
           setIsEnabled(true);
@@ -458,7 +467,8 @@ const Home = () => {
       workerId: parseInt(workerId),
       fullName: fullName || "Nhân viên",
       totalAmount,
-      stocks: { items: stockItems },
+      source: localStorage.getItem("newHome") == 0 ? 0 : 1,
+      stocks: isFirstShift ? { items: stockItems } : { items: [] },
       cashDetails: Object.keys(cashInputs)
         .filter((key) => key !== "bankTransfer" && cashInputs[key] > 0)
         .map((key) => ({
@@ -480,6 +490,7 @@ const Home = () => {
         if (response.data.message === "Bắt đầu ca mới và nhập kho đầu ngày thành công.") {
           toast.success("Bắt đầu ca mới và nhập kho thành công.");
           localStorage.setItem("shiftId", response.data.shiftId);
+          localStorage.setItem("isFirstShift", isFirstShift);
           localStorage.setItem("displayName", response.data.fullName);
           setDisplayName(response.data.fullName);
           setIsEnabled(true);
@@ -511,7 +522,7 @@ const Home = () => {
   const resetNav = () => {
     changeShowViewTrading(1);
     setTradingItemView(1);
-  }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 0);
@@ -527,8 +538,6 @@ const Home = () => {
       </div>
     );
   }
-
-  const isFirstShift = localStorage.getItem("isFirstShift") === "true";
 
   return (
     <div className="page-container">
@@ -627,6 +636,16 @@ const Home = () => {
         <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
           <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
             <h2 className="text-xl font-semibold mb-2 text-center">{isFirstShift ? "Mở ca đầu ngày" : "Mở ca mới"}</h2>
+            <div className="flex items-center justify-center mb-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isFirstShift}
+                  onChange={(e) => setIsFirstShift(e.target.checked)}
+                />
+                <span>Ca đầu ngày</span>
+              </label>
+            </div>
             <div className="flex border-b">
               <button
                 className={`flex-1 py-2 text-center ${activeTab === "Cash"
@@ -637,17 +656,15 @@ const Home = () => {
               >
                 Tiền mặt
               </button>
-              {isFirstShift && (
-                <button
-                  className={`flex-1 py-2 text-center ${activeTab === "Stocks"
-                    ? "border-b-2 border-green-500 font-semibold text-black"
-                    : "text-gray-600 hover:text-black"
-                    }`}
-                  onClick={() => setActiveTab("Stocks")}
-                >
-                  Kho
-                </button>
-              )}
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Stocks")}
+              >
+                Kho
+              </button>
             </div>
             {activeTab === "Cash" && (
               <div className="grid grid-cols-2 gap-3 text-sm">
@@ -680,7 +697,7 @@ const Home = () => {
                 </div>
               </div>
             )}
-            {activeTab === "Stocks" && isFirstShift && (
+            {activeTab === "Stocks" && (
               <div className="max-h-[30svh] overflow-y-auto">
                 {menuItems.length === 0 ? (
                   <p className="text-center text-gray-500">Không có sản phẩm để nhập kho.</p>
@@ -720,6 +737,7 @@ const Home = () => {
                                     handleStockQuantityChange(item.id, "quantityStocks", 0);
                                   }
                                 }}
+                                disabled={!isFirstShift}
                               />
                             </div>
                             <div>
@@ -744,6 +762,7 @@ const Home = () => {
                                     handleStockQuantityChange(item.id, "quantityPackages", 0);
                                   }
                                 }}
+                                disabled={!isFirstShift}
                               />
                             </div>
                           </div>
@@ -774,11 +793,21 @@ const Home = () => {
         </div>
       )}
 
-      {/* Initial Stock Modal (Non-First Shift) */}
+      {/* Initial Stock Modal */}
       {showInitialStockModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 mt-[40px]">
           <div className="bg-white rounded-xl p-4 w-[90%] max-w-md shadow-xl space-y-4 relative">
-            <h2 className="text-xl font-semibold mb-2 text-center">Nhập kho đầu ca</h2>
+            <h2 className="text-xl font-semibold mb-2 text-center">{isFirstShift ? "Mở ca đầu ngày" : "Mở ca mới"}</h2>
+            <div className="flex items-center justify-center mb-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isFirstShift}
+                  onChange={(e) => setIsFirstShift(e.target.checked)}
+                />
+                <span>Ca đầu ngày</span>
+              </label>
+            </div>
             <div className="flex border-b">
               <button
                 className={`flex-1 py-2 text-center ${activeTab === "Cash"
@@ -788,6 +817,15 @@ const Home = () => {
                 onClick={() => setActiveTab("Cash")}
               >
                 Tiền mặt
+              </button>
+              <button
+                className={`flex-1 py-2 text-center ${activeTab === "Stocks"
+                  ? "border-b-2 border-green-500 font-semibold text-black"
+                  : "text-gray-600 hover:text-black"
+                  }`}
+                onClick={() => setActiveTab("Stocks")}
+              >
+                Kho
               </button>
             </div>
             {activeTab === "Cash" && (
@@ -819,6 +857,81 @@ const Home = () => {
                 <div className="col-span-2 text-center mt-4 text-lg font-bold">
                   Tổng tiền: {calculateTotal().toLocaleString()} đ
                 </div>
+              </div>
+            )}
+            {activeTab === "Stocks" && (
+              <div className="max-h-[30svh] overflow-y-auto">
+                {menuItems.length === 0 ? (
+                  <p className="text-center text-gray-500">Không có sản phẩm để nhập kho.</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2">
+                    {menuItems
+                      .filter((item) => {
+                        const name = item.name.toLowerCase().trim();
+                        return (
+                          name !== "double cheeseburger" &&
+                          name !== "double chickenburger"
+                        );
+                      })
+                      .map((item) => (
+                        <div key={item.id} className="flex items-center justify-between gap-2">
+                          <span className="flex-1 text-[12px]">{item.name}</span>
+                          <div className="flex gap-2">
+                            <div>
+                              <label className="text-[12px] mr-1">Bịch</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  stockQuantities[item.id]?.quantityStocks === 0 &&
+                                    inputFocus.stocks[`${item.id}-quantityStocks`]
+                                    ? ""
+                                    : stockQuantities[item.id]?.quantityStocks || 0
+                                }
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
+                                }
+                                className="w-16 border rounded px-2 py-1"
+                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
+                                onBlur={() => {
+                                  handleInputBlur("stocks", `${item.id}-quantityStocks`);
+                                  if (!stockQuantities[item.id]?.quantityStocks) {
+                                    handleStockQuantityChange(item.id, "quantityStocks", 0);
+                                  }
+                                }}
+                                disabled={!isFirstShift}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[12px] mr-1">Đơn vị</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={
+                                  stockQuantities[item.id]?.quantityPackages === 0 &&
+                                    inputFocus.stocks[`${item.id}-quantityPackages`]
+                                    ? ""
+                                    : stockQuantities[item.id]?.quantityPackages || 0
+                                }
+                                onChange={(e) =>
+                                  handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                }
+                                className="w-16 border rounded px-2 py-1"
+                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
+                                onBlur={() => {
+                                  handleInputBlur("stocks", `${item.id}-quantityPackages`);
+                                  if (!stockQuantities[item.id]?.quantityPackages) {
+                                    handleStockQuantityChange(item.id, "quantityPackages", 0);
+                                  }
+                                }}
+                                disabled={!isFirstShift}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             )}
             <div className="flex justify-between mt-4">

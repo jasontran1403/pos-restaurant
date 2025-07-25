@@ -160,6 +160,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       shiftId: localStorage.getItem("shiftId") || 0,
       orderId: localStorage.getItem("orderId") || 0,
       status,
+      source: localStorage.getItem("newHome") == 0 ? 0 : 1,
       note, // Include the note in payload
       customerAmount: parseFloat(cashReceived) || 0,
       payback,
@@ -431,18 +432,9 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     // Use cartRef to get the latest cart state
     const itemInCart = cartRef.current.some((item) => String(item.id) === normalizedItemId);
     if (!itemInCart) {
-      console.log("Long-press blocked: Item not in cart", {
-        itemId: normalizedItemId,
-        itemInCart,
-        cart: cartRef.current,
-      }); // Debug log
       return;
     }
     if (longPressTimer.current) {
-      console.log("Long-press blocked: Timer already exists", {
-        itemId: normalizedItemId,
-        timer: longPressTimer.current,
-      }); // Debug log
       return;
     }
 
@@ -466,9 +458,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const cancelLongPress = (e) => {
     if (e) e.stopPropagation(); // Prevent event bubbling
     if (longPressTimer.current) {
-      console.log("Canceling long-press timer", {
-        target: e ? e.target.tagName : "unknown",
-      }); // Debug log with target element
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
