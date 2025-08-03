@@ -531,41 +531,43 @@ const CompleteOrder = () => {
                     </p>
                   ) : (
                     <div className="grid grid-cols-1 gap-2">
-                      {menuItems.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between gap-2">
-                          <span className="flex-1 text-[12px]">{item.name}</span>
-                          <div className="flex gap-2">
-                            {modalType === "import" && (
-                              <div>
-                                <label className="text-[12px] mr-1">Bịch</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={stockQuantities[item.id]?.quantityStocks || 0}
-                                  onChange={(e) =>
-                                    handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
-                                  }
-                                  className="w-16 border rounded px-2 py-1"
-                                />
-                              </div>
-                            )}
-                            {modalType === "destroy" && (
-                              <div>
-                                <label className="text-[12px] mr-1">Đơn vị</label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  value={stockQuantities[item.id]?.quantityPackages || 0}
-                                  onChange={(e) =>
-                                    handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
-                                  }
-                                  className="w-16 border rounded px-2 py-1"
-                                />
-                              </div>
-                            )}
+                      {menuItems
+                        .filter(item => !["Double Chickenburger", "Double Cheeseburger"].includes(item.name))
+                        .map((item) => (
+                          <div key={item.id} className="flex items-center justify-between gap-2">
+                            <span className="flex-1 text-[12px]">{item.name}</span>
+                            <div className="flex gap-2">
+                              {modalType === "import" && (
+                                <div>
+                                  <label className="text-[12px] mr-1">Bịch</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={stockQuantities[item.id]?.quantityPackages || 0}
+                                    onChange={(e) =>
+                                      handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                    }
+                                    className="w-16 border rounded px-2 py-1"
+                                  />
+                                </div>
+                              )}
+                              {modalType === "destroy" && (
+                                <div>
+                                  <label className="text-[12px] mr-1">Đơn vị</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={stockQuantities[item.id]?.quantityPackages || 0}
+                                    onChange={(e) =>
+                                      handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                    }
+                                    className="w-16 border rounded px-2 py-1"
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </div>
