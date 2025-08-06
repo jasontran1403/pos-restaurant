@@ -105,9 +105,9 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     let url = "";
 
     if (newHome === "1") {
-      url = `${API_ENDPOINT}shift/ff-menu/0/${menuType}`;
+      url = `${API_ENDPOINT}shift/ff-menu/0/${menuType}/${localStorage.getItem("workerId")}`;
     } else {
-      url = `${API_ENDPOINT}shift/menu/${menuType}`;
+      url = `${API_ENDPOINT}shift/menu/${menuType}/${localStorage.getItem("workerId")}`;
     }
 
     Axios.get(url, {

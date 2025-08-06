@@ -182,7 +182,7 @@ const Home = () => {
   };
 
   const fetchMenuItems = () => {
-    Axios.get(`${API_ENDPOINT}shift/menu/0`, {
+    Axios.get(`${API_ENDPOINT}shift/menu/0/${localStorage.getItem("workerId")}`, {
       headers: { "ngrok-skip-browser-warning": "69420" },
     })
       .then((res) => {
