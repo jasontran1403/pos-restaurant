@@ -19,7 +19,7 @@ const listDasNav = ["Trading", "Balance", "Account"];
 const Home = () => {
   const { multiTabDetect } = useContext(MultiTabDetectContext);
   const { isConnected } = useContext(WalletContext);
-
+  const [isExtendedCate, setIsExtendedCate] = useState(false);
   const [showCloseShiftModal, setShowCloseShiftModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [showOpenShiftModal, setShowOpenShiftModal] = useState(false);
@@ -31,6 +31,20 @@ const Home = () => {
   const [isCheckStock, setIsCheckStock] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
   const [stockQuantities, setStockQuantities] = useState({});
+
+  useEffect(() => {
+    const workerIdStr = localStorage.getItem("workerId");
+    console.log("Worker ID:", workerIdStr);
+
+    const workerId = parseInt(workerIdStr, 10); // ép kiểu về số
+
+    if (!isNaN(workerId)) {
+      if ([1, 2, 8].includes(workerId)) {
+        setIsExtendedCate(true);
+      }
+    }
+  }, []);
+
   const [inputTouched, setInputTouched] = useState({
     cash: {},
     stocks: {},
@@ -620,6 +634,13 @@ const Home = () => {
                   >
                     100%
                   </button>
+                  {isExtendedCate && <button
+                    className={tradingItemView === 5 ? "glow" : ""}
+                    onClick={() => changeShowViewTrading(5)}
+                  >
+                    Combo
+                  </button>}
+
                 </div>
               )}
             </div>

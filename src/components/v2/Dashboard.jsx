@@ -97,8 +97,12 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
 
     let menuType;
     if (newHome == 0) {
-      menuType = tradingItemView === 4 ? 100 : (tradingItemView - 1) * 10;
-    } else {
+      if (tradingItemView < 5) {
+        menuType = tradingItemView === 4 ? 100 : (tradingItemView - 1) * 10;
+      } else {
+        menuType = 101;
+      }
+    }  else {
       menuType = tradingItemView === 1 ? 1 : 2;
     }
 
