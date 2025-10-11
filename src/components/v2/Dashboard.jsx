@@ -7,10 +7,12 @@ import "sweetalert2/src/sweetalert2.scss";
 import { motion, useAnimation } from "framer-motion";
 import { toast } from "react-toastify";
 import { useMediaQuery } from "react-responsive";
+import AppMenu from "./AppMenu";
 
 const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const controls = useAnimation();
   const cartControls = useAnimation();
+  const cartAppControls = useAnimation();
   const isMobile = useMediaQuery({ maxWidth: 768 });
   const [note, setNote] = useState(""); // Add this with other state declarations
 
@@ -24,6 +26,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const [loading, setLoading] = useState(false);
   const [focusedItem, setFocusedItem] = useState(null);
   const [showCartPopup, setShowCartPopup] = useState(false);
+  const [showAppMenuPopup, setShowAppMenuPopup] = useState(false);
   const [longPressItemId, setLongPressItemId] = useState(null); // Track long-press item
   const [isLongPressActive, setIsLongPressActive] = useState(false); // Track animation state
   const [longPressedItemId, setLongPressedItemId] = useState(null); // Track the ID of the item that was long-pressed
@@ -102,7 +105,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       } else {
         menuType = 101;
       }
-    }  else {
+    } else {
       menuType = tradingItemView === 1 ? 1 : 2;
     }
 
@@ -259,6 +262,10 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
 
   const handleSave = () =>
     submitBill("pending", "Lưu đơn hàng thành công!");
+
+  const handleSaveAppOrder = () => {
+    console.log("handleSaveAppOrder called");
+  };
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
@@ -555,18 +562,64 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       top: window.innerHeight - 150, // Always position 100px above the bottom
       transition: { type: "spring", stiffness: 300, damping: 20 },
     });
+
+    cartAppControls.start({
+      top: window.innerHeight - 150, // Always position 100px above the bottom
+      transition: { type: "spring", stiffness: 300, damping: 20 },
+    });
   }, [cartControls]);
 
   /* ------------------ RENDER ------------------ */
   return (
     <div className="animation-fadeIn relative">
       {/* Draggable Cart Button with Glassmorphism and Badge Overlay */}
+      {localStorage.getItem("workerId") <= 2 && (
+        <motion.div
+          className="fixed right-16 z-[1000]"
+          animate={cartAppControls}
+        >
+          <button
+            onClick={() => {
+              setShowAppMenuPopup(!showAppMenuPopup);
+              setShowCartPopup(false);
+            }}
+            className="bg-white/10 backdrop-blur-md text-white rounded-full flex items-center gap-2 p-2 relative"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 7V3h13v4M3 7h13v10h-1a3 3 0 01-6 0H4a3 3 0 01-6 0h1V7zm13 0l5 5v5h-2a3 3 0 01-6 0h-1V7z"
+              />
+            </svg>
+            <motion.span
+              className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center absolute -top-1 -right-1"
+              animate={{ y: [0, -5, 0], transition: { duration: 0.3 } }}
+              onAnimationComplete={() => cartControls.set({ x: 0 })}
+            >
+              {cart.reduce((sum, item) => sum + item.qty, 0)}
+            </motion.span>
+          </button>
+        </motion.div>
+      )}
+
+
       <motion.div
         className="fixed right-4 z-[1000]"
         animate={cartControls}
       >
         <button
-          onClick={() => setShowCartPopup(!showCartPopup)}
+          onClick={() => {
+            setShowCartPopup(!showCartPopup);
+            setShowAppMenuPopup(false);
+          }}
           className="bg-white/10 backdrop-blur-md text-white rounded-full flex items-center gap-2 p-2 relative"
         >
           <svg
@@ -784,6 +837,11 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
         </motion.div>
       )}
 
+      <AppMenu
+        show={showAppMenuPopup}
+        onClose={() => setShowAppMenuPopup(false)}
+      />
+
       {!loading && (
         <div className="flex flex-col gap-4 w-[95svw] mx-auto">
           {/* slider */}
@@ -804,7 +862,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               <div className="grid grid-cols-3 gap-4">
-                {filteredMenu.map((item) => (
+                {filteredMenu.filter(item => !item.name.includes("Phô mai Emborg")).map((item) => (
                   <motion.div
                     key={item.id}
                     ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item

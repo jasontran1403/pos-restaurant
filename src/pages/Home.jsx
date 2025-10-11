@@ -34,9 +34,8 @@ const Home = () => {
 
   useEffect(() => {
     const workerIdStr = localStorage.getItem("workerId");
-    console.log("Worker ID:", workerIdStr);
 
-    const workerId = parseInt(workerIdStr, 10); // ép kiểu về số
+    const workerId = parseInt(workerIdStr, 10);
 
     if (!isNaN(workerId)) {
       if ([1, 2, 8].includes(workerId)) {
@@ -744,63 +743,78 @@ const Home = () => {
                           name !== "double chickenburger"
                         );
                       })
-                      .map((item) => (
-                        <div key={item.id} className="flex items-center justify-between gap-2">
-                          <span className="flex-1 text-[12px]">{item.name}</span>
-                          <div className="flex gap-2">
-                            <div>
-                              <label className="text-[12px] mr-1">Bịch</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={
-                                  stockQuantities[item.id]?.quantityStocks === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityStocks`]
-                                    ? ""
-                                    : stockQuantities[item.id]?.quantityStocks || 0
-                                }
-                                onChange={(e) =>
-                                  handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
-                                }
-                                className="w-16 border rounded px-2 py-1"
-                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
-                                onBlur={() => {
-                                  handleInputBlur("stocks", `${item.id}-quantityStocks`);
-                                  if (!stockQuantities[item.id]?.quantityStocks) {
-                                    handleStockQuantityChange(item.id, "quantityStocks", 0);
+                      .map((item) => {
+                        const name = item.name.toLowerCase().trim();
+                        const showPackageInput = name === "bánh mỳ hotdogs" || name === "bánh mỳ hamburger";
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between gap-2 border border-gray-100 rounded p-2"
+                          >
+                            <span className="flex-1 text-[12px]">{item.name}</span>
+
+                            <div className="flex gap-2">
+                              {/* --- Ô nhập Bịch --- */}
+                              <div>
+                                <label className="text-[12px] mr-1">Bịch</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={
+                                    stockQuantities[item.id]?.quantityStocks === 0 &&
+                                      inputFocus.stocks[`${item.id}-quantityStocks`]
+                                      ? ""
+                                      : stockQuantities[item.id]?.quantityStocks || 0
                                   }
-                                }}
-                                disabled={!isFirstShift}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[12px] mr-1">Đơn vị</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={
-                                  stockQuantities[item.id]?.quantityPackages === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityPackages`]
-                                    ? ""
-                                    : stockQuantities[item.id]?.quantityPackages || 0
-                                }
-                                onChange={(e) =>
-                                  handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
-                                }
-                                className="w-16 border rounded px-2 py-1"
-                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
-                                onBlur={() => {
-                                  handleInputBlur("stocks", `${item.id}-quantityPackages`);
-                                  if (!stockQuantities[item.id]?.quantityPackages) {
-                                    handleStockQuantityChange(item.id, "quantityPackages", 0);
+                                  onChange={(e) =>
+                                    handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
                                   }
-                                }}
-                                disabled={!isFirstShift}
-                              />
+                                  className="w-16 border rounded px-2 py-1"
+                                  onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
+                                  onBlur={() => {
+                                    handleInputBlur("stocks", `${item.id}-quantityStocks`);
+                                    if (!stockQuantities[item.id]?.quantityStocks) {
+                                      handleStockQuantityChange(item.id, "quantityStocks", 0);
+                                    }
+                                  }}
+                                  disabled={!isFirstShift}
+                                />
+                              </div>
+
+                              {/* --- Ô nhập Đơn vị --- */}
+                              {!showPackageInput && (
+                                <div>
+                                  <label className="text-[12px] mr-1">Đơn vị</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={
+                                      stockQuantities[item.id]?.quantityPackages === 0 &&
+                                        inputFocus.stocks[`${item.id}-quantityPackages`]
+                                        ? ""
+                                        : stockQuantities[item.id]?.quantityPackages || 0
+                                    }
+                                    onChange={(e) =>
+                                      handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
+                                    }
+                                    className="w-16 border rounded px-2 py-1"
+                                    onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
+                                    onBlur={() => {
+                                      handleInputBlur("stocks", `${item.id}-quantityPackages`);
+                                      if (!stockQuantities[item.id]?.quantityPackages) {
+                                        handleStockQuantityChange(item.id, "quantityPackages", 0);
+                                      }
+                                    }}
+                                    disabled={!isFirstShift}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
+
                   </div>
                 )}
               </div>
