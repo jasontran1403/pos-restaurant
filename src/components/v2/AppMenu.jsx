@@ -178,71 +178,73 @@ export default function AppMenu({ show, onClose }) {
 
                         {/* --- Danh sách món --- */}
                         <div className="space-y-2 overflow-y-auto rounded-lg p-2 max-h-[40vh]">
-                            {filteredItems.map((item) => {
-                                const qty = quantities[item.id] || 0;
-                                const isActive = qty > 0;
+                            {filteredItems
+                                .filter(item => !item.name.includes(" - 500gr"))
+                                .map((item) => {
+                                    const qty = quantities[item.id] || 0;
+                                    const isActive = qty > 0;
 
-                                return (
-                                    <motion.div
-                                        key={item.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className={`flex items-center gap-3 border rounded-lg p-2 transition ${isActive
-                                            ? "bg-green-50 border-green-400 shadow-md scale-[1.02]"
-                                            : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                                            }`}
-                                    >
-                                        {/* Ảnh thumbnail */}
-                                        {item.image ? (
-                                            <img
-                                                src={item.image}
-                                                alt={item.name}
-                                                className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
-                                                No Img
+                                    return (
+                                        <motion.div
+                                            key={item.id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className={`flex items-center gap-3 border rounded-lg p-2 transition ${isActive
+                                                ? "bg-green-50 border-green-400 shadow-md scale-[1.02]"
+                                                : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                                                }`}
+                                        >
+                                            {/* Ảnh thumbnail */}
+                                            {item.image ? (
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.name}
+                                                    className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                                                />
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                                                    No Img
+                                                </div>
+                                            )}
+
+                                            {/* Tên món */}
+                                            <div className="flex-1">
+                                                <div className="font-medium text-gray-800 truncate text-xs sm:text-base">
+                                                    {item.name}
+                                                </div>
                                             </div>
-                                        )}
 
-                                        {/* Tên món */}
-                                        <div className="flex-1">
-                                            <div className="font-medium text-gray-800 truncate">
-                                                {item.name}
+                                            {/* Bộ chọn số lượng */}
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleDecrease(item.id)}
+                                                    className="w-9 h-9 flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white rounded transition"
+                                                >
+                                                    −
+                                                </button>
+
+                                                <input
+                                                    type="text"
+                                                    value={qty}
+                                                    onChange={(e) =>
+                                                        handleChange(item.id, e.target.value)
+                                                    }
+                                                    className={`w-12 h-9 text-center border rounded-md text-sm font-medium flex items-center justify-center focus:outline-none transition ${isActive
+                                                        ? "border-green-500 bg-white text-gray-800"
+                                                        : "border-gray-300 bg-white text-gray-600"
+                                                        }`}
+                                                />
+
+                                                <button
+                                                    onClick={() => handleIncrease(item.id)}
+                                                    className="w-9 h-9 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded transition"
+                                                >
+                                                    +
+                                                </button>
                                             </div>
-                                        </div>
-
-                                        {/* Bộ chọn số lượng */}
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => handleDecrease(item.id)}
-                                                className="w-9 h-9 flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white rounded transition"
-                                            >
-                                                −
-                                            </button>
-
-                                            <input
-                                                type="text"
-                                                value={qty}
-                                                onChange={(e) =>
-                                                    handleChange(item.id, e.target.value)
-                                                }
-                                                className={`w-12 h-9 text-center border rounded-md text-sm font-medium flex items-center justify-center focus:outline-none transition ${isActive
-                                                    ? "border-green-500 bg-white text-gray-800"
-                                                    : "border-gray-300 bg-white text-gray-600"
-                                                    }`}
-                                            />
-
-                                            <button
-                                                onClick={() => handleIncrease(item.id)}
-                                                className="w-9 h-9 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded transition"
-                                            >
-                                                +
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
+                                        </motion.div>
+                                    );
+                                })}
                         </div>
 
                         {/* --- Footer --- */}

@@ -738,11 +738,21 @@ const Home = () => {
                     {menuItems
                       .filter((item) => {
                         const name = item.name.toLowerCase().trim();
+                        const workerId = Number(localStorage.getItem("workerId"));
+
+                        // ✅ Chỉ trả về "phô mai emborg" nếu workerId <= 2
+                        if (name.includes("phô mai emborg")) {
+                          return workerId <= 2;
+                        }
+
+                        // ✅ Các món khác luôn hiển thị bình thường
                         return (
                           name !== "double cheeseburger" &&
-                          name !== "double chickenburger"
+                          name !== "double chickenburger" &&
+                          !name.includes("- 500gr")
                         );
                       })
+
                       .map((item) => {
                         const name = item.name.toLowerCase().trim();
                         const showPackageInput = name === "bánh mỳ hotdogs" || name === "bánh mỳ hamburger";
@@ -918,7 +928,8 @@ const Home = () => {
                         const name = item.name.toLowerCase().trim();
                         return (
                           name !== "double cheeseburger" &&
-                          name !== "double chickenburger"
+                          name !== "double chickenburger" &&
+                          !name.includes("- 500gr")
                         );
                       })
                       .map((item) => (
@@ -1078,9 +1089,18 @@ const Home = () => {
                     {menuItems
                       .filter((item) => {
                         const name = item.name.toLowerCase().trim();
+
+                        const workerId = Number(localStorage.getItem("workerId"));
+
+                        // ✅ Chỉ trả về "phô mai emborg" nếu workerId <= 2
+                        if (name.includes("phô mai emborg")) {
+                          return workerId <= 2;
+                        }
+
                         return (
                           name !== "double cheeseburger" &&
-                          name !== "double chickenburger"
+                          name !== "double chickenburger" &&
+                          !name.includes("- 500gr")
                         );
                       })
                       .map((item) => (

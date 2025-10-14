@@ -599,17 +599,9 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                 d="M3 7V3h13v4M3 7h13v10h-1a3 3 0 01-6 0H4a3 3 0 01-6 0h1V7zm13 0l5 5v5h-2a3 3 0 01-6 0h-1V7z"
               />
             </svg>
-            <motion.span
-              className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center absolute -top-1 -right-1"
-              animate={{ y: [0, -5, 0], transition: { duration: 0.3 } }}
-              onAnimationComplete={() => cartControls.set({ x: 0 })}
-            >
-              {cart.reduce((sum, item) => sum + item.qty, 0)}
-            </motion.span>
           </button>
         </motion.div>
       )}
-
 
       <motion.div
         className="fixed right-4 z-[1000]"
@@ -843,7 +835,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       />
 
       {!loading && (
-        <div className="flex flex-col gap-4 w-[95svw] mx-auto">
+        <div className="flex flex-col gap-4 m-6 w-[90svw] mx-auto">
           {/* slider */}
           <motion.div
             ref={sliderRef}
@@ -862,7 +854,98 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               <div className="grid grid-cols-3 gap-4">
-                {filteredMenu.filter(item => !item.name.includes("Phô mai Emborg")).map((item) => (
+                {filteredMenu.filter(item => !item.name.includes("Phô mai Emborg") && item.menuType.includes("Normal")).map((item) => (
+                  <motion.div
+                    key={item.id}
+                    ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item
+                    className={`cursor-pointer relative no-select ${isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""}`}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent click event bubbling
+                      if (longPressedItemId === String(item.id)) {
+                        return;
+                      }
+                      handleAdd(item);
+                    }}
+                    onMouseDown={(e) => startLongPress(item.id, e)}
+                    onMouseUp={(e) => cancelLongPress(e)}
+                    onMouseLeave={(e) => cancelLongPress(e)}
+                    animate={
+                      focusedItem === item.id
+                        ? {
+                          y: [-10, 0, -5, 0],
+                          transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                        }
+                        : isLongPressActive && longPressItemId === String(item.id)
+                          ? {
+                            x: [-5, 5, -5, 5, 0],
+                            transition: { duration: 0.3, repeat: 1 },
+                          }
+                          : {}
+                    }
+                  >
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-[80px] object-cover rounded-lg pointer-events-none"
+                      draggable={false} // Prevent image dragging
+                    />
+                    <p className="text-center text-white text-[10px] font-bold pointer-events-none">
+                      {item.name}
+                    </p>
+                    {item.type > 0 && item.type <= 100 ? (
+                      <div className="text-center pointer-events-none">
+                        <p className="text-green-400 text-[8px] pointer-events-none">
+                          {formatCurrency(getDiscountedPrice(item))}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-center text-green-400 text-[8px] pointer-events-none">
+                        {formatCurrency(item.price)}
+                      </p>
+                    )}
+                    {cartQtyMap[item.id] > 0 && (
+                      <motion.span
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs pointer-events-none"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {cartQtyMap[item.id]}
+                      </motion.span>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      )}
+
+      {!loading && tradingItemView === 1 && localStorage.getItem("workerId") <= 2 && (
+        <div className="flex flex-col gap-4 w-[90svw] mx-auto">
+          <div className="flex justify-center items-center m-2">
+            <p className="text-lg text-white">Menu Lạnh</p>
+          </div>
+          {/* slider */}
+          <motion.div
+            ref={sliderRef}
+            className="overflow-hidden"
+            style={{
+              height: isMobile ? "fit-content" : "fit-content",
+              overflowY: isMobile ? "auto" : "hidden",
+            }}
+          >
+            <motion.div
+              className="flex flex-col gap-4"
+              drag={!isMobile ? "x" : false}
+              dragConstraints={!isMobile ? { left: -dragLimit, right: 0 } : undefined}
+              dragElastic={!isMobile ? 0.05 : undefined}
+              animate={controls}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <div className="grid grid-cols-3 gap-4">
+                {filteredMenu.filter(item => !item.name.includes("Phô mai Emborg") && !item.menuType.includes("Normal")).map((item) => (
                   <motion.div
                     key={item.id}
                     ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item

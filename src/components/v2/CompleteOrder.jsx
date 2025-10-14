@@ -540,7 +540,22 @@ const CompleteOrder = () => {
                   ) : (
                     <div className="grid grid-cols-1 gap-2">
                       {menuItems
-                        .filter(item => !["Double Chickenburger", "Double Cheeseburger"].includes(item.name))
+                        .filter((item) => {
+                          const workerId = Number(localStorage.getItem("workerId"));
+                          const name = item.name.trim();
+
+                          // Nếu là Phô mai Emborg → chỉ hiển thị khi workerId <= 2
+                          if (name.toLowerCase().includes("phô mai emborg")) {
+                            return workerId <= 2;
+                          }
+
+                          // Các món khác → áp dụng bộ lọc chung
+                          return (
+                            !["Double Chickenburger", "Double Cheeseburger"].includes(name) &&
+                            !name.includes("- 500gr")
+                          );
+                        })
+
                         .map((item) => (
                           <div key={item.id} className="flex items-center justify-between gap-2">
                             <span className="flex-1 text-[12px]">{item.name}</span>
