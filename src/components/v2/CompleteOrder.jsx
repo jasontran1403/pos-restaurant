@@ -174,6 +174,14 @@ const CompleteOrder = () => {
     setIsModalOpen(true);
   };
 
+  function formatPlatform(str) {
+    if (!str) return "";
+    // chuyển toàn bộ về chữ thường, sau đó viết hoa chữ cái đầu
+    const lower = str.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }
+
+
   const handleSubmitReport = () => {
     console.log(today);
     let { startDate, endDate } = reportDateRange;
@@ -347,10 +355,10 @@ const CompleteOrder = () => {
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-white">Đơn #{order.orderId}</div>
+                  <div className="text-lg font-semibold text-white">Đơn #{order.orderId} - <span className="italic">({formatPlatform(order.platform)})</span></div>
                   <div className="text-green-200 text-sm">{formatNumber(order.totalAmount)} đ</div>
                 </div>
-                <div className="text-right flex flex-col items-end mt-2">
+                {order.platform === "OFFLINE" && <div className="text-right flex flex-col items-end mt-2">
                   <span
                     className={`text-green-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                     title={order.status === "CASH" ? "Tiền mặt" : "Chuyển khoản"}
@@ -380,7 +388,7 @@ const CompleteOrder = () => {
                       </svg>
                     )}
                   </span>
-                </div>
+                </div>}
                 {expandedOrder === order.orderId && (
                   <motion.div
                     className="col-span-3 mt-4 bg-white/10 rounded-lg overflow-hidden"
@@ -409,7 +417,7 @@ const CompleteOrder = () => {
                               layout
                             >
                               <span className="text-white w-[50%] break-words">{item.name} × {item.qty}</span>
-                              <span className="text-green-200">{formatNumber(item.price * item.qty)} đ ({item.type})</span>
+                              <span className="text-green-200">{formatNumber(item.price * item.qty)}đ {item.platform === "Offline" && <span>({item.type})</span>}</span>
                             </motion.div>
                           ))}
                         </AnimatePresence>
