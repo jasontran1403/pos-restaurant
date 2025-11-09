@@ -63,7 +63,7 @@ export default function AppMenu({ show, onClose }) {
             .then((res) => {
                 const filtered = res.data.filter(
                     (item) =>
-                        !["Hotdogs & Coke", "Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(
+                        !["Hotdogs & Coke", "Bánh mỳ hotdogs", "Bánh mỳ hamburger", "Combo OT", "Salads mix nhỏ"].includes(
                             item.name?.trim()
                         )
                 );
@@ -250,13 +250,19 @@ export default function AppMenu({ show, onClose }) {
                         {/* --- Footer --- */}
                         <div className="flex justify-end gap-3 mt-4">
                             <button
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow font-medium transition"
+                                className="px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded-lg shadow font-medium transition"
+                                onClick={() => handleSaveOrder("Grab")}
+                            >
+                                Save GrabFood
+                            </button>
+                            <button
+                                className="px-4 py-2 bg-orange-600 hover:bg-orange-800 text-white rounded-lg shadow font-medium transition"
                                 onClick={() => handleSaveOrder("Shopee")}
                             >
                                 Save ShopeeFood
                             </button>
                             <button
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow font-medium transition"
+                                className="px-4 py-2 bg-yellow-400 hover:bg-yellow-600 text-white rounded-lg shadow font-medium transition"
                                 onClick={() => handleSaveOrder("Be")}
                             >
                                 Save BeFood
