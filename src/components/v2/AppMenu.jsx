@@ -172,13 +172,13 @@ export default function AppMenu({ show, onClose }) {
         <AnimatePresence>
             {show && (
                 <motion.div
-                    className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-sm pt-20"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                 >
                     <motion.div
-                        className="relative p-4 bg-white/95 rounded-xl w-full max-w-lg mx-2 shadow-xl flex flex-col"
+                        className="relative p-4 bg-white/95 rounded-xl w-full max-w-lg mx-2 shadow-xl flex flex-col max-h-[70vh]"
                         initial={{ scale: 0.9, y: 40 }}
                         animate={{ scale: 1, y: 0 }}
                         exit={{ scale: 0.9, y: 40 }}
@@ -211,7 +211,7 @@ export default function AppMenu({ show, onClose }) {
                         {/* --- Danh sách món --- */}
                         <div 
                             ref={listContainerRef}
-                            className="space-y-2 overflow-y-auto rounded-lg p-2 max-h-[40vh]"
+                            className="space-y-2 overflow-y-auto rounded-lg p-2 max-h-[30vh]"
                         >
                             {filteredItems
                                 .filter(item => !item.name.includes(" - 500gr"))
