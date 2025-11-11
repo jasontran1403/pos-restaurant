@@ -55,7 +55,6 @@ export default function AppMenu({ show, onClose }) {
         }
     };
 
-
     const fetchMenuItems = () => {
         Axios.get(`${API_ENDPOINT}shift/menu/app-menu`, {
             headers: { "ngrok-skip-browser-warning": "69420" },
@@ -92,7 +91,6 @@ export default function AppMenu({ show, onClose }) {
             // Axios.post(`${API_ENDPOINT}menu/save-qty`, { id, qty })
         }, 300);
     };
-
 
     // --- Debounce save ---
     const handleIncrease = (id) => {
@@ -154,7 +152,7 @@ export default function AppMenu({ show, onClose }) {
                         {/* --- Nút đóng X --- */}
                         <button
                             onClick={onClose}
-                            className="absolute top-3 right-3 text-gray-500 hover:text-red-600 transition"
+                            className="absolute top-3 right-3 text-gray-500 hover:text-red-600 transition text-lg w-8 h-8 flex items-center justify-center"
                             title="Đóng"
                         >
                             ✕
@@ -190,56 +188,57 @@ export default function AppMenu({ show, onClose }) {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             className={`flex items-center gap-3 border rounded-lg p-2 transition ${isActive
-                                                ? "bg-green-50 border-green-400 shadow-md scale-[1.02]"
+                                                ? "bg-green-50 border-green-400 shadow-md"
                                                 : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                                                 }`}
                                         >
                                             {/* Ảnh thumbnail */}
-                                            {item.image ? (
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.name}
-                                                    className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-                                                />
-                                            ) : (
-                                                <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
-                                                    No Img
-                                                </div>
-                                            )}
+                                            <div className="flex-shrink-0">
+                                                {item.image ? (
+                                                    <img
+                                                        src={item.image}
+                                                        alt={item.name}
+                                                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-gray-200"
+                                                    />
+                                                ) : (
+                                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                                                        No Img
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                            {/* Tên món */}
-                                            <div className="flex-1">
-                                                <div className="font-medium text-gray-800 truncate text-xs sm:text-base">
+                                            {/* Tên món - chiếm không gian còn lại */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-gray-800 text-sm sm:text-base truncate">
                                                     {item.name}
                                                 </div>
                                             </div>
 
-                                            {/* Bộ chọn số lượng */}
-                                            <div className="flex items-center gap-2">
+                                            {/* Bộ chọn số lượng - thiết kế đẹp hơn */}
+                                            <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => handleDecrease(item.id)}
-                                                    className="w-9 h-9 flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white rounded transition"
+                                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
                                                 >
-                                                    −
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
+                                                    </svg>
                                                 </button>
 
-                                                <input
-                                                    type="text"
-                                                    value={qty}
-                                                    onChange={(e) =>
-                                                        handleChange(item.id, e.target.value)
-                                                    }
-                                                    className={`w-12 h-9 text-center border rounded-md text-sm font-medium flex items-center justify-center focus:outline-none transition ${isActive
-                                                        ? "border-green-500 bg-white text-gray-800"
-                                                        : "border-gray-300 bg-white text-gray-600"
-                                                        }`}
-                                                />
+                                                <div className={`w-10 h-8 sm:w-12 sm:h-9 flex items-center justify-center border-2 rounded-lg font-semibold text-sm transition-all ${isActive
+                                                    ? "border-green-500 bg-white text-green-600"
+                                                    : "border-gray-300 bg-white text-gray-600"
+                                                    }`}>
+                                                    {qty}
+                                                </div>
 
                                                 <button
                                                     onClick={() => handleIncrease(item.id)}
-                                                    className="w-9 h-9 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded transition"
+                                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
                                                 >
-                                                    +
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                                                    </svg>
                                                 </button>
                                             </div>
                                         </motion.div>
@@ -247,25 +246,25 @@ export default function AppMenu({ show, onClose }) {
                                 })}
                         </div>
 
-                        {/* --- Footer --- */}
-                        <div className="flex justify-end gap-3 mt-4">
+                        {/* --- Footer - responsive cho nút --- */}
+                        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4">
                             <button
-                                className="px-4 py-2 bg-green-500 hover:bg-green-700 text-white rounded-lg shadow font-medium transition"
+                                className="px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-sm flex items-center justify-center gap-2"
                                 onClick={() => handleSaveOrder("Grab")}
                             >
-                                Save GrabFood
+                                <span>Save GrabFood</span>
                             </button>
                             <button
-                                className="px-4 py-2 bg-orange-600 hover:bg-orange-800 text-white rounded-lg shadow font-medium transition"
+                                className="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-sm flex items-center justify-center gap-2"
                                 onClick={() => handleSaveOrder("Shopee")}
                             >
-                                Save ShopeeFood
+                                <span>Save ShopeeFood</span>
                             </button>
                             <button
-                                className="px-4 py-2 bg-yellow-400 hover:bg-yellow-600 text-white rounded-lg shadow font-medium transition"
+                                className="px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-sm flex items-center justify-center gap-2"
                                 onClick={() => handleSaveOrder("Be")}
                             >
-                                Save BeFood
+                                <span>Save BeFood</span>
                             </button>
                         </div>
                     </motion.div>
