@@ -10,6 +10,7 @@ export default function AppMenu({ show, onClose }) {
     const [quantities, setQuantities] = useState({});
     const [searchTerm, setSearchTerm] = useState("");
     const saveTimeouts = useRef({}); // lưu debounce cho từng món
+    const listContainerRef = useRef(null); // ref cho container danh sách
 
     const handleSaveOrder = async (platform) => {
         // Tạo danh sách item có số lượng > 0
@@ -31,11 +32,11 @@ export default function AppMenu({ show, onClose }) {
         }
 
         const billRequest = {
-            shiftId: localStorage.getItem("shiftId"), // 👉 bạn thay bằng shift thực tế
-            orderId: 0, // 0 nghĩa là đơn mới, backend sẽ tự tạo
+            shiftId: localStorage.getItem("shiftId"),
+            orderId: 0,
             source: 0,
             platform: platform,
-            status: "bank", // hoặc "cash" / "bank"
+            status: "bank",
             note: "",
             customerAmount: 0,
             payback: 0,
@@ -98,6 +99,17 @@ export default function AppMenu({ show, onClose }) {
             const newVal = (prev[id] || 0) + 1;
             const updated = { ...prev, [id]: newVal };
             scheduleSave(id, newVal);
+            
+            // Scroll to top after a short delay to allow re-render
+            setTimeout(() => {
+                if (listContainerRef.current) {
+                    listContainerRef.current.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100);
+            
             return updated;
         });
     };
@@ -107,6 +119,17 @@ export default function AppMenu({ show, onClose }) {
             const newVal = Math.max((prev[id] || 0) - 1, 0);
             const updated = { ...prev, [id]: newVal };
             scheduleSave(id, newVal);
+            
+            // Scroll to top after a short delay to allow re-render
+            setTimeout(() => {
+                if (listContainerRef.current) {
+                    listContainerRef.current.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100);
+            
             return updated;
         });
     };
@@ -117,6 +140,17 @@ export default function AppMenu({ show, onClose }) {
         setQuantities((prev) => {
             const updated = { ...prev, [id]: num };
             scheduleSave(id, num);
+            
+            // Scroll to top after a short delay to allow re-render
+            setTimeout(() => {
+                if (listContainerRef.current) {
+                    listContainerRef.current.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100);
+            
             return updated;
         });
     };
@@ -175,7 +209,10 @@ export default function AppMenu({ show, onClose }) {
                         </div>
 
                         {/* --- Danh sách món --- */}
-                        <div className="space-y-2 overflow-y-auto rounded-lg p-2 max-h-[40vh]">
+                        <div 
+                            ref={listContainerRef}
+                            className="space-y-2 overflow-y-auto rounded-lg p-2 max-h-[40vh]"
+                        >
                             {filteredItems
                                 .filter(item => !item.name.includes(" - 500gr"))
                                 .map((item) => {
@@ -198,10 +235,10 @@ export default function AppMenu({ show, onClose }) {
                                                     <img
                                                         src={item.image}
                                                         alt={item.name}
-                                                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-cover border border-gray-200"
+                                                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-gray-200"
                                                     />
                                                 ) : (
-                                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
+                                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
                                                         No Img
                                                     </div>
                                                 )}
@@ -214,18 +251,18 @@ export default function AppMenu({ show, onClose }) {
                                                 </div>
                                             </div>
 
-                                            {/* Bộ chọn số lượng - thiết kế đẹp hơn */}
+                                            {/* Bộ chọn số lượng - kích thước nhỏ hơn trên mobile */}
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => handleDecrease(item.id)}
-                                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+                                                    className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-3 h-3 sm:w-3 sm:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
                                                     </svg>
                                                 </button>
 
-                                                <div className={`w-10 h-8 sm:w-12 sm:h-9 flex items-center justify-center border-2 rounded-lg font-semibold text-sm transition-all ${isActive
+                                                <div className={`w-7 h-6 sm:w-9 sm:h-8 flex items-center justify-center border-2 rounded-lg font-semibold text-xs sm:text-sm transition-all ${isActive
                                                     ? "border-green-500 bg-white text-green-600"
                                                     : "border-gray-300 bg-white text-gray-600"
                                                     }`}>
@@ -234,9 +271,9 @@ export default function AppMenu({ show, onClose }) {
 
                                                 <button
                                                     onClick={() => handleIncrease(item.id)}
-                                                    className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+                                                    className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
                                                 >
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-3 h-3 sm:w-3 sm:h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
                                                     </svg>
                                                 </button>
@@ -249,19 +286,19 @@ export default function AppMenu({ show, onClose }) {
                         {/* --- Footer - responsive cho nút --- */}
                         <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4">
                             <button
-                                className="px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-sm flex items-center justify-center gap-2"
+                                className="px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-xs sm:text-sm flex items-center justify-center gap-2"
                                 onClick={() => handleSaveOrder("Grab")}
                             >
                                 <span>Save GrabFood</span>
                             </button>
                             <button
-                                className="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-sm flex items-center justify-center gap-2"
+                                className="px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-xs sm:text-sm flex items-center justify-center gap-2"
                                 onClick={() => handleSaveOrder("Shopee")}
                             >
                                 <span>Save ShopeeFood</span>
                             </button>
                             <button
-                                className="px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-sm flex items-center justify-center gap-2"
+                                className="px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white rounded-lg shadow font-medium transition-all duration-200 text-xs sm:text-sm flex items-center justify-center gap-2"
                                 onClick={() => handleSaveOrder("Be")}
                             >
                                 <span>Save BeFood</span>
