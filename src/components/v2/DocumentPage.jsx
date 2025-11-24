@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 
 const videos = [
-    { id: 1, title: "Quy trình chế biến Hamburger/Chicken Burger", youtubeId: "WSz7nGr9dr0" },
-    { id: 2, title: "Quy trình chế biến Hotdogs/Mozzaella Hotdogs", youtubeId: "gScSJqPVTvo" },
+    { id: 1, title: "Quy trình chế biến Lasagna", youtubeId: "tRIN2lkhbGg" },
+    { id: 2, title: "Quy trình chế biến Hamburger/Chicken Burger", youtubeId: "WSz7nGr9dr0" },
+    { id: 3, title: "Quy trình chế biến Hotdogs/Mozzaella Hotdogs", youtubeId: "gScSJqPVTvo" },
 ];
 
 const DocumentPage = () => {
