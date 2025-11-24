@@ -13,8 +13,9 @@ import { API_ENDPOINT } from "../constants";
 import Swal from "sweetalert2/dist/sweetalert2.js";
 import "sweetalert2/src/sweetalert2.scss";
 import { LogOut } from "lucide-react";
+import DocumentPage from "../components/v2/DocumentPage";
 
-const listDasNav = ["Trading", "Balance", "Account"];
+const listDasNav = ["Trading", "Balance", "Account", "Documents"];
 
 const Home = () => {
   const { multiTabDetect } = useContext(MultiTabDetectContext);
@@ -538,6 +539,7 @@ const Home = () => {
   };
 
   const handleTabClick = (tabName) => {
+    console.log(tabName);
     setSelectedDasTab(tabName);
   };
 
@@ -653,6 +655,7 @@ const Home = () => {
           <Dashboard enableShift={isEnabled} tradingItemView={tradingItemView} resetNav={resetNav} />
         )}
         {selectedDasTab === "Account" && <Account />}
+        {selectedDasTab === "Documents" && <DocumentPage />}
         <div className="cover mb-2">
           <SubNav
             listNav={listDasNav}

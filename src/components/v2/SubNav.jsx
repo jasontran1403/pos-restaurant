@@ -27,7 +27,7 @@ const SubNav = ({ listNav, selectedTab, handleTabClick, type }) => {
                                 width: formatString(selectedTab) === "user" ? "25px" : undefined,
                             }}
                             className={`icon-${tab.toLowerCase()}`}
-                            src={`/icons/${tab === "Trading" ? "order" : tab === "Balance" ? "pending" : "history"}.png`}
+                            src={`/icons/${tab === "Trading" ? "order" : tab === "Balance" ? "pending" : tab === "Documents" ? "documents" : "history"}.png`}
                             alt={tab}
                         />
                         {/* <span className={`text-black w-[30px] ${selectedTab === "User Information" ? "user-nav-text" : ""}`} >{tab === "Trading" ? "Order" : tab === "Balance" ? "Pending" : "History" }</span> */}
