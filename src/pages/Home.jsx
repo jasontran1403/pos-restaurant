@@ -743,22 +743,33 @@ const Home = () => {
                         const name = item.name.toLowerCase().trim();
                         const workerId = Number(localStorage.getItem("workerId"));
 
-                        // ✅ Chỉ trả về "phô mai emborg" nếu workerId <= 2
+                        // 🌟 1. Ẩn German hotdogs khi workerId = 10
+                        if (workerId === 10 && name.includes("german hotdogs")) {
+                          return false;
+                        }
+
+                        // 🌟 2. Chỉ hiển thị "phô mai emborg" nếu workerId <= 2
                         if (name.includes("phô mai emborg")) {
                           return workerId <= 2;
                         }
 
-                        // ✅ Các món khác luôn hiển thị bình thường
-                        return (
-                          name !== "double cheeseburger" &&
-                          name !== "double chickenburger" &&
-                          !name.includes("- 500gr")
-                        );
+                        // 🌟 3. Ẩn các món cố định
+                        if (
+                          name === "double cheeseburger" ||
+                          name === "double chickenburger" ||
+                          name.includes("- 500gr")
+                        ) {
+                          return false;
+                        }
+
+                        // 🌟 4. Các món còn lại hiển thị bình thường
+                        return true;
                       })
+
 
                       .map((item) => {
                         const name = item.name.toLowerCase().trim();
-                        const showPackageInput = name === "bánh mỳ hotdogs" || name === "bánh mỳ hamburger";
+                        const showPackageInput = name === "bánh mỳ hotdogs" || name === "bánh mỳ hamburger" || name === "bánh mỳ ổ";
 
                         return (
                           <div
@@ -929,6 +940,9 @@ const Home = () => {
                     {menuItems
                       .filter((item) => {
                         const name = item.name.toLowerCase().trim();
+                        if (workerId === 10) {
+                          return !name.includes("German hotdogs");
+                        }
                         return (
                           name !== "double cheeseburger" &&
                           name !== "double chickenburger" &&
@@ -1084,87 +1098,141 @@ const Home = () => {
               </div>
             )}
             {activeTab === "Stocks" && (
-              <div className="max-h-[30svh] overflow-y-auto">
-                {menuItems.length === 0 ? (
-                  <p className="text-center text-gray-500">Không có sản phẩm để kiểm kho.</p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-2">
-                    {menuItems
-                      .filter((item) => {
-                        const name = item.name.toLowerCase().trim();
+  <div className="max-h-[30svh] overflow-y-auto">
+    {menuItems.length === 0 ? (
+      <p className="text-center text-gray-500">Không có sản phẩm để kiểm kho.</p>
+    ) : (
+      <div className="grid grid-cols-1 gap-2">
+        {menuItems
+          .filter((item) => {
+            const name = item.name.toLowerCase().trim();
+            const workerId = Number(localStorage.getItem("workerId"));
 
-                        const workerId = Number(localStorage.getItem("workerId"));
+            // Chỉ cho phép "phô mai emborg" nếu workerId <= 2
+            if (name.includes("phô mai emborg")) {
+              return workerId <= 2;
+            }
 
-                        // ✅ Chỉ trả về "phô mai emborg" nếu workerId <= 2
-                        if (name.includes("phô mai emborg")) {
-                          return workerId <= 2;
-                        }
+            // Không cho phép "german hotdogs" với workerId = 10
+            if (name.includes("german hotdogs") && workerId === 10) {
+              return false;
+            }
 
-                        return (
-                          name !== "double cheeseburger" &&
-                          name !== "double chickenburger" &&
-                          !name.includes("- 500gr")
+            return (
+              name !== "double cheeseburger" &&
+              name !== "double chickenburger" &&
+              !name.includes("- 500gr")
+            );
+          })
+          .map((item) => {
+            const hideUnit =
+              ["Bánh mỳ ổ", "Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(
+                item.name
+              );
+
+            return (
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-2"
+              >
+                <span className="flex-1 text-[12px]">{item.name}</span>
+
+                <div className="flex gap-2">
+
+                  {/* Bịch */}
+                  <div>
+                    <label className="text-[12px] mr-1">Bịch</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={
+                        stockQuantities[item.id]?.quantityStocks === 0 &&
+                        inputFocus.stocks[`${item.id}-quantityStocks`]
+                          ? ""
+                          : stockQuantities[item.id]?.quantityStocks || 0
+                      }
+                      onChange={(e) =>
+                        handleStockQuantityChange(
+                          item.id,
+                          "quantityStocks",
+                          e.target.value
+                        )
+                      }
+                      className="w-16 border rounded px-2 py-1"
+                      onFocus={() =>
+                        handleInputFocus(
+                          "stocks",
+                          `${item.id}-quantityStocks`
+                        )
+                      }
+                      onBlur={() => {
+                        handleInputBlur(
+                          "stocks",
+                          `${item.id}-quantityStocks`
                         );
-                      })
-                      .map((item) => (
-                        <div key={item.id} className="flex items-center justify-between gap-2">
-                          <span className="flex-1 text-[12px]">{item.name}</span>
-                          <div className="flex gap-2">
-                            <div>
-                              <label className="text-[12px] mr-1">Bịch</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={
-                                  stockQuantities[item.id]?.quantityStocks === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityStocks`]
-                                    ? ""
-                                    : stockQuantities[item.id]?.quantityStocks || 0
-                                }
-                                onChange={(e) =>
-                                  handleStockQuantityChange(item.id, "quantityStocks", e.target.value)
-                                }
-                                className="w-16 border rounded px-2 py-1"
-                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityStocks`)}
-                                onBlur={() => {
-                                  handleInputBlur("stocks", `${item.id}-quantityStocks`);
-                                  if (!stockQuantities[item.id]?.quantityStocks) {
-                                    handleStockQuantityChange(item.id, "quantityStocks", 0);
-                                  }
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[12px] mr-1">Đơn vị</label>
-                              <input
-                                type="number"
-                                min="0"
-                                value={
-                                  stockQuantities[item.id]?.quantityPackages === 0 &&
-                                    inputFocus.stocks[`${item.id}-quantityPackages`]
-                                    ? ""
-                                    : stockQuantities[item.id]?.quantityPackages || 0
-                                }
-                                onChange={(e) =>
-                                  handleStockQuantityChange(item.id, "quantityPackages", e.target.value)
-                                }
-                                className="w-16 border rounded px-2 py-1"
-                                onFocus={() => handleInputFocus("stocks", `${item.id}-quantityPackages`)}
-                                onBlur={() => {
-                                  handleInputBlur("stocks", `${item.id}-quantityPackages`);
-                                  if (!stockQuantities[item.id]?.quantityPackages) {
-                                    handleStockQuantityChange(item.id, "quantityPackages", 0);
-                                  }
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                        if (!stockQuantities[item.id]?.quantityStocks) {
+                          handleStockQuantityChange(
+                            item.id,
+                            "quantityStocks",
+                            0
+                          );
+                        }
+                      }}
+                    />
                   </div>
-                )}
+
+                  {/* Đơn vị (ẩn cho bánh mì) */}
+                  {!hideUnit && (
+                    <div>
+                      <label className="text-[12px] mr-1">Đơn vị</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={
+                          stockQuantities[item.id]?.quantityPackages === 0 &&
+                          inputFocus.stocks[`${item.id}-quantityPackages`]
+                            ? ""
+                            : stockQuantities[item.id]?.quantityPackages || 0
+                        }
+                        onChange={(e) =>
+                          handleStockQuantityChange(
+                            item.id,
+                            "quantityPackages",
+                            e.target.value
+                          )
+                        }
+                        className="w-16 border rounded px-2 py-1"
+                        onFocus={() =>
+                          handleInputFocus(
+                            "stocks",
+                            `${item.id}-quantityPackages`
+                          )
+                        }
+                        onBlur={() => {
+                          handleInputBlur(
+                            "stocks",
+                            `${item.id}-quantityPackages`
+                          );
+                          if (!stockQuantities[item.id]?.quantityPackages) {
+                            handleStockQuantityChange(
+                              item.id,
+                              "quantityPackages",
+                              0
+                            );
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            );
+          })}
+      </div>
+    )}
+  </div>
+)}
+
             <div className="flex justify-between mt-4">
               <button
                 onClick={() => {

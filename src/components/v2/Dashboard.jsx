@@ -122,7 +122,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     })
       .then((res) => {
         // Filter out items marked as ingredients
-        const filteredMenu = res.data.filter((item) => (item.name !== "Bánh mỳ hotdogs" && item.name !== "Bánh mỳ hamburger"));
+        const filteredMenu = res.data.filter((item) => (item.name !== "Bánh mỳ ổ"  && item.name !== "Bánh mỳ hotdogs" && item.name !== "Bánh mỳ hamburger"));
         setMenu(filteredMenu);
       })
       .catch(console.error)

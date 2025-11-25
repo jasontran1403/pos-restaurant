@@ -63,7 +63,7 @@ export default function AppMenu({ show, onClose }) {
             .then((res) => {
                 const filtered = res.data.filter(
                     (item) =>
-                        !["Hotdogs & Coke", "Bánh mỳ hotdogs", "Bánh mỳ hamburger", "Combo OT", "Salads mix nhỏ"].includes(
+                        !["Hotdogs & Coke", "Bánh mỳ ổ", "Bánh mỳ hotdogs", "Bánh mỳ hamburger", "Combo OT", "Salads mix nhỏ"].includes(
                             item.name?.trim()
                         )
                 );

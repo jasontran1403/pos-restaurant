@@ -406,7 +406,7 @@ const CompleteOrder = () => {
                         </div>
                       ) : (
                         <AnimatePresence>
-                          {orderDetails?.filter(item => !["Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(item.name)).map((item) => (
+                          {orderDetails?.filter(item => !["Bánh mỳ ổ", "Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(item.name)).map((item) => (
                             <motion.div
                               key={item.id}
                               className="flex justify-between items-center py-2 border-b border-white/5 last:border-b-0"
@@ -547,6 +547,9 @@ const CompleteOrder = () => {
                           // Nếu là Phô mai Emborg → chỉ hiển thị khi workerId <= 2
                           if (name.toLowerCase().includes("phô mai emborg")) {
                             return workerId <= 2;
+                          }
+                          if (name.toLowerCase().includes("german hotdogs") && workerId == 10) {
+                            return false;
                           }
 
                           // Các món khác → áp dụng bộ lọc chung
