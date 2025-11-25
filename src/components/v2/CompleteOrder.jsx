@@ -406,21 +406,51 @@ const CompleteOrder = () => {
                         </div>
                       ) : (
                         <AnimatePresence>
-                          {orderDetails?.filter(item => !["Bánh mỳ ổ", "Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(item.name)).map((item) => (
-                            <motion.div
-                              key={item.id}
-                              className="flex justify-between items-center py-2 border-b border-white/5 last:border-b-0"
-                              variants={itemVariants}
-                              initial="hidden"
-                              animate="visible"
-                              exit="exit"
-                              layout
-                            >
-                              <span className="text-white w-[50%] break-words">{item.name} × {item.qty}</span>
-                              <span className="text-green-200">{formatNumber(item.price * item.qty)}đ {item.platform === "Offline" && <span>({item.type})</span>}</span>
-                            </motion.div>
-                          ))}
+                          {orderDetails
+                            ?.filter(
+                              (item) =>
+                                !["Bánh mỳ ổ", "Bánh mỳ hotdogs", "Bánh mỳ hamburger"].includes(
+                                  item.name
+                                )
+                            )
+                            .map((item) => {
+                              const workerId = Number(localStorage.getItem("workerId"));
+
+                              // 🔥 Chỉ áp dụng đổi tên khi workerId = 10
+                              let displayName = item.name;
+
+                              if (workerId === 10) {
+                                if (item.name === "Hotdogs Mozzarella") {
+                                  displayName = "German hotdogs";
+                                }
+                                if (item.name === "Italian Spicy") {
+                                  displayName = "Spicy Italian";
+                                }
+                              }
+
+                              return (
+                                <motion.div
+                                  key={item.id}
+                                  className="flex justify-between items-center py-2 border-b border-white/5 last:border-b-0"
+                                  variants={itemVariants}
+                                  initial="hidden"
+                                  animate="visible"
+                                  exit="exit"
+                                  layout
+                                >
+                                  <span className="text-white w-[50%] break-words">
+                                    {displayName} × {item.qty}
+                                  </span>
+
+                                  <span className="text-green-200">
+                                    {formatNumber(item.price * item.qty)}đ
+                                    {item.platform === "Offline" && <span>({item.type})</span>}
+                                  </span>
+                                </motion.div>
+                              );
+                            })}
                         </AnimatePresence>
+
                       )}
                     </div>
                   </motion.div>
