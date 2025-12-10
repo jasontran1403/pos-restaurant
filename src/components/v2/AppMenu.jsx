@@ -74,7 +74,9 @@ export default function AppMenu({ show, onClose }) {
                             "Xúc xích nửa mét",
                             "Combo Nô-Ên",
                             "Combo Giòn rụm",
-                            "Đạo xúc xích"
+                            "Đạo xúc xích",
+                            "Burger nhân tôm",
+                            "Khoai Thụy Sĩ"
                         ].includes(item.name?.trim())
                 );
                 setMenuItems(filtered);
