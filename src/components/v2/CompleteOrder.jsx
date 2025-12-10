@@ -584,8 +584,8 @@ const CompleteOrder = () => {
 
                           // Các món khác → áp dụng bộ lọc chung
                           return (
-                            !["Double Chickenburger", "Double Cheeseburger"].includes(name) &&
-                            !name.includes("- 500gr")
+                            !["Double Chickenburger", "Double Cheeseburger", "Burger nhân tôm", "Salads mix nhỏ"].includes(name) &&
+                            !name.includes("- 500gr") && item.id !== 47000
                           );
                         })
 
