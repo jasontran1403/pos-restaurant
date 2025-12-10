@@ -43,7 +43,6 @@ export default function AppMenu({ show, onClose }) {
             listItem,
         };
 
-        console.log(billRequest);
         try {
             const res = await Axios.post(`${API_ENDPOINT}shift/save-app-order`, billRequest, {
                 headers: { "ngrok-skip-browser-warning": "69420" },
@@ -63,9 +62,20 @@ export default function AppMenu({ show, onClose }) {
             .then((res) => {
                 const filtered = res.data.filter(
                     (item) =>
-                        !["Hotdogs & Coke", "Bánh mỳ ổ", "Bánh mỳ hotdogs", "Bánh mỳ hamburger", "Combo OT", "Salads mix nhỏ"].includes(
-                            item.name?.trim()
-                        )
+                        ![
+                            "Hotdogs & Coke",
+                            "Bánh mỳ ổ",
+                            "Bánh mỳ hotdogs",
+                            "Bánh mỳ hamburger",
+                            "Combo OT",
+                            "Salads mix nhỏ",
+                            "Combo 2 chúng mình",
+                            "Combo Chúng mình mập ú",
+                            "Xúc xích nửa mét",
+                            "Combo Nô-Ên",
+                            "Combo Giòn rụm",
+                            "Đạo xúc xích"
+                        ].includes(item.name?.trim())
                 );
                 setMenuItems(filtered);
 
@@ -99,7 +109,7 @@ export default function AppMenu({ show, onClose }) {
             const newVal = (prev[id] || 0) + 1;
             const updated = { ...prev, [id]: newVal };
             scheduleSave(id, newVal);
-            
+
             // Scroll to top after a short delay to allow re-render
             setTimeout(() => {
                 if (listContainerRef.current) {
@@ -109,7 +119,7 @@ export default function AppMenu({ show, onClose }) {
                     });
                 }
             }, 100);
-            
+
             return updated;
         });
     };
@@ -119,7 +129,7 @@ export default function AppMenu({ show, onClose }) {
             const newVal = Math.max((prev[id] || 0) - 1, 0);
             const updated = { ...prev, [id]: newVal };
             scheduleSave(id, newVal);
-            
+
             // Scroll to top after a short delay to allow re-render
             setTimeout(() => {
                 if (listContainerRef.current) {
@@ -129,7 +139,7 @@ export default function AppMenu({ show, onClose }) {
                     });
                 }
             }, 100);
-            
+
             return updated;
         });
     };
@@ -140,7 +150,7 @@ export default function AppMenu({ show, onClose }) {
         setQuantities((prev) => {
             const updated = { ...prev, [id]: num };
             scheduleSave(id, num);
-            
+
             // Scroll to top after a short delay to allow re-render
             setTimeout(() => {
                 if (listContainerRef.current) {
@@ -150,7 +160,7 @@ export default function AppMenu({ show, onClose }) {
                     });
                 }
             }, 100);
-            
+
             return updated;
         });
     };
@@ -209,7 +219,7 @@ export default function AppMenu({ show, onClose }) {
                         </div>
 
                         {/* --- Danh sách món --- */}
-                        <div 
+                        <div
                             ref={listContainerRef}
                             className="space-y-2 overflow-y-auto rounded-lg p-2 max-h-[30vh]"
                         >

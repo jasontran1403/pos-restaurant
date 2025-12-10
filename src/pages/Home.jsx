@@ -539,7 +539,6 @@ const Home = () => {
   };
 
   const handleTabClick = (tabName) => {
-    console.log(tabName);
     setSelectedDasTab(tabName);
   };
 

@@ -19,6 +19,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   /* ------------------ STATE ------------------ */
   const { accessToken } = useAccessToken();
   const [menu, setMenu] = useState([]);
+  const [processedMenu, setProcessedMenu] = useState([]); // New state for processed menu
   const [quantities, setQuantities] = useState({});
   const [cart, setCart] = useState([]);
   const cartRef = useRef(cart); // Ref to track latest cart state
@@ -33,6 +34,13 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const [showCashForm, setShowCashForm] = useState(false); // Track cash form visibility
   const [cashReceived, setCashReceived] = useState(""); // Track cash received input
   const [isSubmitting, setIsSubmitting] = useState(false); // Track API submission status
+  // New states for variant modal
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null); // For simple radio selection
+  const [selectedBurger, setSelectedBurger] = useState(0); // 0: Hamburger, 1: Chicken Burger
+  const [selectedSausages, setSelectedSausages] = useState([]); // Array of sausage indices
+  const [sausageCounts, setSausageCounts] = useState([0, 0, 0]); // Counts for Đạo xúc xích: [Cheddar, Garlic, Spicy]
   const longPressTimer = useRef(null); // Timer for long-press
   const itemRefs = useRef({}); // Store refs for each item to attach event listeners
   const touchStartPos = useRef(null); // Track touch start position
@@ -49,7 +57,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
         "ngrok-skip-browser-warning": "69420",
       }
     };
-
     Axios.request(config)
       .then((response) => {
         localStorage.setItem("isFirstShift", response.data);
@@ -57,7 +64,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       .catch((error) => {
         console.log(error);
       });
-
   }, []);
 
   // Update cartRef whenever cart changes
@@ -67,9 +73,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
 
   useEffect(() => {
     const orderId = localStorage.getItem("orderId");
-
     if (!orderId) return;
-
     Axios.get(`${API_ENDPOINT}shift/edit-bill/${orderId}`, {
       headers: {
         "ngrok-skip-browser-warning": "69420",
@@ -95,9 +99,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   useEffect(() => {
     if (loading) return;
     setLoading(true);
-
     const newHome = localStorage.getItem("newHome");
-
     let menuType;
     if (newHome == 0) {
       if (tradingItemView < 5) {
@@ -108,43 +110,66 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     } else {
       menuType = tradingItemView === 1 ? 1 : 2;
     }
-
     let url = "";
-
     if (newHome === "1") {
       url = `${API_ENDPOINT}shift/ff-menu/0/${menuType}/${localStorage.getItem("workerId")}`;
     } else {
       url = `${API_ENDPOINT}shift/menu/${menuType}/${localStorage.getItem("workerId")}`;
     }
-
     Axios.get(url, {
       headers: { "ngrok-skip-browser-warning": "69420" },
     })
       .then((res) => {
         // Filter out items marked as ingredients
-        const filteredMenu = res.data.filter((item) => (item.name !== "Bánh mỳ ổ"  && item.name !== "Bánh mỳ hotdogs" && item.name !== "Bánh mỳ hamburger"));
+        const filteredMenu = res.data.filter((item) => (item.name !== "Bánh mỳ ổ" && item.name !== "Bánh mỳ hotdogs" && item.name !== "Bánh mỳ hamburger"));
         setMenu(filteredMenu);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [accessToken, tradingItemView]);
 
+  // New useEffect to process menu for deduplication and variant handling
+  useEffect(() => {
+    const processMenu = () => {
+      const groups = {};
+      menu.forEach(item => {
+        const key = item.name; // Group by name
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+      });
+
+      const processed = [];
+      Object.keys(groups).forEach(name => {
+        const group = groups[name].sort((a, b) => a.variant - b.variant);
+        let rep;
+        const isMultiVariant = group.length > 1 && (name === "Combo 2 chúng mình" || name === "Combo Chúng mình mập ú" || name === "Đạo xúc xích");
+        if (!isMultiVariant) {
+          rep = group[0];
+        } else {
+          rep = { ...group[0], hasVariants: true, allVariants: group };
+        }
+        processed.push(rep);
+      });
+
+      setProcessedMenu(processed);
+    };
+
+    if (menu.length > 0) processMenu();
+  }, [menu]);
+
   /* ------------------ FILTER + DRAG LIMIT ------------------ */
   const filteredMenu = useMemo(
-    () => menu.filter((m) => m.name.toLowerCase().includes(search.toLowerCase())),
-    [menu, search]
+    () => processedMenu.filter((m) => m.name.toLowerCase().includes(search.toLowerCase())),
+    [processedMenu, search]
   );
 
   useEffect(() => {
     const updateSlider = () => {
       if (!sliderRef.current) return;
-
       const newLimit = sliderRef.current.scrollWidth - sliderRef.current.offsetWidth;
       setDragLimit(Math.max(0, newLimit));
-
       controls.start({ x: 0 }, { type: "spring", stiffness: 500, damping: 30 });
     };
-
     const timer = setTimeout(updateSlider, 50);
     return () => clearTimeout(timer);
   }, [filteredMenu, controls]);
@@ -160,10 +185,18 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     return m;
   }, [cart]);
 
+  const cartQtyByName = useMemo(() => {
+    const m = {};
+    cart.forEach(({ name, qty }) => {
+      if (!m[name]) m[name] = 0;
+      m[name] += qty;
+    });
+    return m;
+  }, [cart]);
+
   const buildPayload = (status, cashReceived = 0) => {
     const total = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
     const payback = Math.max(0, (parseFloat(cashReceived) || 0) - total);
-
     return {
       shiftId: localStorage.getItem("shiftId") || 0,
       orderId: localStorage.getItem("orderId") || 0,
@@ -172,25 +205,22 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       note, // Include the note in payload
       customerAmount: parseFloat(cashReceived) || 0,
       payback,
-      listItem: cart.map(({ id, qty }) => ({
+      listItem: cart.map(({ id, qty, variant }) => ({
         productId: id,
         quantity: qty,
+        variant: variant
       })),
     };
   };
 
-  const submitBill = (status, successMsg, cashReceived = 0) => {
+  const submitBill = (status, successMsg, cashReceived = 0, variant = 0) => {
     if (!enableShift) {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi thao tác.");
       return;
     }
-
     if (isSubmitting) return; // Prevent multiple submissions
-
     setIsSubmitting(true); // Set loading state
-
-    const payload = buildPayload(status, cashReceived);
-
+    const payload = buildPayload(status, cashReceived, variant);
     Axios.post(`${API_ENDPOINT}shift/save-bill`, payload, {
       headers: {
         "Content-Type": "application/json",
@@ -247,25 +277,18 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const handleCashSubmit = (e) => {
     e.preventDefault();
     if (isSubmitting) return; // Prevent submission if already in progress
-
     const cash = parseFloat(cashReceived);
     const total = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
-
     if (isNaN(cash) || cash < total) {
       toast.error("Số tiền nhận không hợp lệ hoặc không đủ.");
       return;
     }
-
     submitBill("cash", "Tạo đơn hàng thành công, thanh toán Tiền Mặt!", cash);
     setNote(""); // Reset note after submission
   };
 
   const handleSave = () =>
     submitBill("pending", "Lưu đơn hàng thành công!");
-
-  const handleSaveAppOrder = () => {
-    console.log("handleSaveAppOrder called");
-  };
 
   const handleClearCart = () => {
     if (cart.length === 0) return;
@@ -374,7 +397,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi thêm sản phẩm.");
       return;
     }
-
     setCart((prev) => {
       const idx = prev.findIndex((c) => String(c.id) === String(item.id));
       if (idx > -1) {
@@ -393,12 +415,85 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     }); // Shake animation
   };
 
+  // Function to adjust sausage counts for Đạo xúc xích
+  const adjustSausageCount = (index, delta) => {
+    setSausageCounts((prev) => {
+      const newCounts = [...prev];
+      const currentTotal = prev.reduce((a, b) => a + b, 0);
+      const newCount = newCounts[index] + delta;
+      if (newCount < 0 || currentTotal + delta > 3) {
+        return prev; // Don't allow invalid changes
+      }
+      newCounts[index] = newCount;
+      return newCounts;
+    });
+  };
+
+  // New handler for variant confirmation
+  const handleConfirmVariant = () => {
+    if (!selectedItem) return;
+    let itemToAdd;
+    const name = selectedItem.name;
+    if (name === "Combo 2 chúng mình") {
+      if (!selectedVariant) {
+        toast.error("Vui lòng chọn một loại xúc xích.");
+        return;
+      }
+      itemToAdd = selectedItem.allVariants.find((v) => v.variant === selectedVariant);
+    } else if (name === "Combo Chúng mình mập ú") {
+      if (selectedSausages.length !== 2) {
+        toast.error("Vui lòng chọn đúng 2 loại xúc xích.");
+        return;
+      }
+      const sortedSaus = [...selectedSausages].sort((a, b) => a - b);
+      let pairIndex;
+      if (sortedSaus[0] === 0 && sortedSaus[1] === 1) pairIndex = 1;
+      else if (sortedSaus[0] === 0 && sortedSaus[1] === 2) pairIndex = 2;
+      else if (sortedSaus[0] === 1 && sortedSaus[1] === 2) pairIndex = 3;
+      else return toast.error("Lỗi chọn xúc xích.");
+      const v = pairIndex + (selectedBurger * 3);
+      itemToAdd = selectedItem.allVariants.find((vv) => vv.variant === v);
+    } else if (name === "Đạo xúc xích") {
+      const total = sausageCounts.reduce((a, b) => a + b, 0);
+      if (total !== 3) {
+        toast.error("Vui lòng chọn đúng 3 xúc xích.");
+        return;
+      }
+      // Map counts [Cheddar(0), Garlic(1), Spicy(2)] to variant 1-10
+      const [c0, c1, c2] = sausageCounts;
+      let v;
+      if (c0 === 3 && c1 === 0 && c2 === 0) v = 1;
+      else if (c0 === 0 && c1 === 3 && c2 === 0) v = 2;
+      else if (c0 === 0 && c1 === 0 && c2 === 3) v = 3;
+      else if (c0 === 2 && c1 === 1 && c2 === 0) v = 4;
+      else if (c0 === 2 && c1 === 0 && c2 === 1) v = 5;
+      else if (c0 === 1 && c1 === 2 && c2 === 0) v = 6;
+      else if (c0 === 0 && c1 === 2 && c2 === 1) v = 7;
+      else if (c0 === 1 && c1 === 0 && c2 === 2) v = 8;
+      else if (c0 === 0 && c1 === 1 && c2 === 2) v = 9;
+      else if (c0 === 1 && c1 === 1 && c2 === 1) v = 10;
+      else {
+        toast.error("Lựa chọn không hợp lệ.");
+        return;
+      }
+      itemToAdd = selectedItem.allVariants.find((vv) => vv.variant === v);
+    }
+    if (itemToAdd) {
+      handleAdd(itemToAdd);
+      setShowVariantModal(false);
+      setSelectedItem(null);
+      setSelectedVariant(null);
+      setSelectedBurger(0);
+      setSelectedSausages([]);
+      setSausageCounts([0, 0, 0]);
+    }
+  };
+
   const handleIncrease = (itemId) => {
     if (!enableShift) {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi thao tác.");
       return;
     }
-
     setCart((prev) =>
       prev.map((item) =>
         String(item.id) === String(itemId) ? { ...item, qty: item.qty + 1 } : item
@@ -411,7 +506,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       toast.error("Bạn cần bắt đầu ca làm việc trước khi thao tác.");
       return;
     }
-
     setCart((prev) => {
       const existingItem = prev.find((item) => String(item.id) === String(itemId));
       if (existingItem.qty <= 1) {
@@ -462,7 +556,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     if (longPressTimer.current) {
       return;
     }
-
     touchStartPos.current = {
       x: e.touches ? e.touches[0].clientX : e.clientX,
       y: e.touches ? e.touches[0].clientY : e.clientY,
@@ -497,11 +590,9 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     const handleTouchStart = (itemId) => (e) => {
       startLongPress(itemId, e);
     };
-
     const handleTouchEnd = (e) => {
       cancelLongPress(e);
     };
-
     const handleTouchMove = (e) => {
       if (!touchStartPos.current) return;
       const currentX = e.touches[0].clientX;
@@ -513,12 +604,10 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
         cancelLongPress(e);
       }
     };
-
     const handleContextMenu = (e) => {
       e.preventDefault(); // Prevent context menu
       e.stopPropagation(); // Prevent event bubbling
     };
-
     // Attach event listeners to each item's ref
     const attachListeners = () => {
       Object.keys(itemRefs.current).forEach((itemId) => {
@@ -534,7 +623,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
         }
       });
     };
-
     // Cleanup event listeners
     const cleanupListeners = () => {
       Object.keys(itemRefs.current).forEach((itemId) => {
@@ -550,7 +638,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
         }
       });
     };
-
     // Attach listeners initially and re-attach when filteredMenu changes
     attachListeners();
     return cleanupListeners;
@@ -562,12 +649,24 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
       top: window.innerHeight - 150, // Always position 100px above the bottom
       transition: { type: "spring", stiffness: 300, damping: 20 },
     });
-
     cartAppControls.start({
       top: window.innerHeight - 150, // Always position 100px above the bottom
       transition: { type: "spring", stiffness: 300, damping: 20 },
     });
   }, [cartControls]);
+
+  // Hardcoded sausage options
+  const sausages = [
+    "Cheddar Cheese Sausages",
+    "Garlic Sausages",
+    "Spicy Italian"
+  ];
+
+  // Hardcoded burger options
+  const burgers = [
+    "Hamburger",
+    "Chicken Burger"
+  ];
 
   /* ------------------ RENDER ------------------ */
   return (
@@ -602,7 +701,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
           </button>
         </motion.div>
       )}
-
       <motion.div
         className="fixed right-4 z-[1000]"
         animate={cartControls}
@@ -637,7 +735,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
           </motion.span>
         </button>
       </motion.div>
-
       {/* Cart Popup */}
       {showCartPopup && (
         <motion.div
@@ -669,9 +766,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                           initial={{ opacity: 0, x: 30 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: -30 }}
-                          className="flex justify-between items-center pb Lillll
-
-                          pb-3 border-b border-black/10 last:border-b-0"
+                          className="flex justify-between items-center pb-3 border-b border-black/10 last:border-b-0"
                         >
                           <span className="break-words max-w-[30%] text-[14px] text-black">
                             {c.name} × {c.qty}
@@ -719,12 +814,10 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                       className="w-full p-2 border rounded text-black text-sm mt-1"
                     />
                   </div>
-
                   {(() => {
                     const subtotal = cart.reduce((s, i) => s + i.qty * getDiscountedPrice(i), 0);
                     const vat = 0;
                     const total = subtotal + vat;
-
                     return (
                       <>
                         {[
@@ -746,7 +839,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                             </span>
                           </div>
                         ))}
-
                         {/* Cash payment form (shown only when cash payment is selected) */}
                         {showCashForm && (
                           <div className="mt-4 p-3 bg-gray-100 rounded-lg">
@@ -802,7 +894,6 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                             </div>
                           </div>
                         )}
-
                         {/* Action buttons (shown when cash form is not visible) */}
                         {!showCashForm && (
                           <div className="w-full flex justify-center gap-4 mt-4 flex-wrap">
@@ -829,11 +920,145 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
         </motion.div>
       )}
 
+      {/* New Variant Selection Modal */}
+      {showVariantModal && selectedItem && (
+        <motion.div
+          className="fixed inset-0 flex items-center justify-center z-50 bg-black/50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => {
+            setShowVariantModal(false);
+            setSelectedItem(null);
+            setSelectedVariant(null);
+            setSelectedBurger(0);
+            setSelectedSausages([]);
+            setSausageCounts([0, 0, 0]);
+          }}
+        >
+          <motion.div
+            className="bg-white p-6 rounded-xl max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto"
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold mb-4 text-center">{selectedItem.name}</h3>
+            <div className="space-y-4">
+              {selectedItem.name === "Combo 2 chúng mình" ? (
+                <div>
+                  <p className="text-sm mb-3">Chọn 1 loại xúc xích:</p>
+                  {sausages.map((saus, index) => (
+                    <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="variant"
+                        value={index + 1}
+                        checked={selectedVariant === index + 1}
+                        onChange={(e) => setSelectedVariant(parseInt(e.target.value))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{saus}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : selectedItem.name === "Combo Chúng mình mập ú" ? (
+                <div>
+                  <p className="text-sm mb-3">Chọn loại burger:</p>
+                  <div className="space-y-2 mb-4">
+                    {burgers.map((burger, index) => (
+                      <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="burger"
+                          checked={selectedBurger === index}
+                          onChange={() => setSelectedBurger(index)}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{burger}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-sm mb-3">Chọn 2 loại xúc xích:</p>
+                  <div className="space-y-2">
+                    {sausages.map((saus, index) => (
+                      <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedSausages.includes(index)}
+                          onChange={(e) => {
+                            const newSel = e.target.checked
+                              ? [...selectedSausages, index]
+                              : selectedSausages.filter(i => i !== index);
+                            if (newSel.length <= 2) setSelectedSausages(newSel);
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{saus}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : selectedItem.name === "Đạo xúc xích" ? (
+                <div>
+                  <p className="text-sm mb-3">Chọn số lượng cho mỗi loại xúc xích (tổng cộng 3):</p>
+                  <div className="space-y-3">
+                    {sausages.map((saus, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-sm w-32">{saus}:</span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => adjustSausageCount(index, -1)}
+                            className="px-2 py-1 bg-gray-300 rounded text-sm"
+                            disabled={sausageCounts[index] === 0}
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center text-sm font-bold">{sausageCounts[index]}</span>
+                          <button
+                            onClick={() => adjustSausageCount(index, 1)}
+                            className="px-2 py-1 bg-gray-300 rounded text-sm"
+                            disabled={sausageCounts.reduce((a, b) => a + b, 0) === 3}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="text-center text-sm font-bold mt-2">
+                      Tổng: {sausageCounts.reduce((a, b) => a + b, 0)} / 3
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <button
+                onClick={() => {
+                  setShowVariantModal(false);
+                  setSelectedItem(null);
+                  setSelectedVariant(null);
+                  setSelectedBurger(0);
+                  setSelectedSausages([]);
+                  setSausageCounts([0, 0, 0]);
+                }}
+                className="px-4 py-2 bg-gray-300 rounded"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleConfirmVariant}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       <AppMenu
         show={showAppMenuPopup}
         onClose={() => setShowAppMenuPopup(false)}
       />
-
       {!loading && (
         <div className="flex flex-col gap-4 m-6 w-[90svw] mx-auto">
           {/* slider */}
@@ -854,74 +1079,82 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               <div className="grid grid-cols-3 gap-4">
-                {filteredMenu.filter(item => !item.name.includes("Phô mai Emborg") && item.menuType.includes("Normal")).map((item) => (
-                  <motion.div
-                    key={item.id}
-                    ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item
-                    className={`cursor-pointer relative no-select ${isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent click event bubbling
-                      if (longPressedItemId === String(item.id)) {
-                        return;
-                      }
-                      handleAdd(item);
-                    }}
-                    onMouseDown={(e) => startLongPress(item.id, e)}
-                    onMouseUp={(e) => cancelLongPress(e)}
-                    onMouseLeave={(e) => cancelLongPress(e)}
-                    animate={
-                      focusedItem === item.id
-                        ? {
-                          y: [-10, 0, -5, 0],
-                          transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                {filteredMenu.filter(item => !item.name.includes("Nhân burger Tôm") &&
+                  !item.name.includes("Khoai Thụy Sĩ") &&
+                  !item.name.includes("Beef Snail sausages") &&
+                  !item.name.includes("Phô mai Emborg") &&
+                  item.menuType.includes("Normal")).map((item) => (
+                    <motion.div
+                      key={item.id}
+                      ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item
+                      className={`cursor-pointer relative no-select ${isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent click event bubbling
+                        if (longPressedItemId === String(item.id)) {
+                          return;
                         }
-                        : isLongPressActive && longPressItemId === String(item.id)
+                        if (item.hasVariants) {
+                          setSelectedItem(item);
+                          setShowVariantModal(true);
+                        } else {
+                          handleAdd(item);
+                        }
+                      }}
+                      onMouseDown={(e) => startLongPress(item.id, e)}
+                      onMouseUp={(e) => cancelLongPress(e)}
+                      onMouseLeave={(e) => cancelLongPress(e)}
+                      animate={
+                        focusedItem === item.id
                           ? {
-                            x: [-5, 5, -5, 5, 0],
-                            transition: { duration: 0.3, repeat: 1 },
-                          }
-                          : {}
-                    }
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-full h-[80px] object-cover rounded-lg pointer-events-none"
-                      draggable={false} // Prevent image dragging
-                    />
-                    <p className="text-center text-white text-[10px] font-bold pointer-events-none">
-                      {item.name}
-                    </p>
-                    {item.type > 0 && item.type <= 100 ? (
-                      <div className="text-center pointer-events-none">
-                        <p className="text-green-400 text-[8px] pointer-events-none">
-                          {formatCurrency(getDiscountedPrice(item))}
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-center text-green-400 text-[8px] pointer-events-none">
-                        {formatCurrency(item.price)}
+                              y: [-10, 0, -5, 0],
+                              transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                            }
+                          : isLongPressActive && longPressItemId === String(item.id)
+                            ? {
+                                x: [-5, 5, -5, 5, 0],
+                                transition: { duration: 0.3, repeat: 1 },
+                              }
+                            : {}
+                      }
+                    >
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-[80px] object-cover rounded-lg pointer-events-none"
+                        draggable={false} // Prevent image dragging
+                      />
+                      <p className="text-center text-white text-[10px] font-bold pointer-events-none">
+                        {item.name}
                       </p>
-                    )}
-                    {cartQtyMap[item.id] > 0 && (
-                      <motion.span
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs pointer-events-none"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        {cartQtyMap[item.id]}
-                      </motion.span>
-                    )}
-                  </motion.div>
-                ))}
+                      {item.type > 0 && item.type <= 100 ? (
+                        <div className="text-center pointer-events-none">
+                          <p className="text-green-400 text-[8px] pointer-events-none">
+                            {formatCurrency(getDiscountedPrice(item))}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-center text-green-400 text-[8px] pointer-events-none">
+                          {formatCurrency(item.price)}
+                        </p>
+                      )}
+                      {cartQtyByName[item.name] > 0 && (
+                        <motion.span
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs pointer-events-none"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {cartQtyByName[item.name]}
+                        </motion.span>
+                      )}
+                    </motion.div>
+                  ))}
               </div>
             </motion.div>
           </motion.div>
         </div>
       )}
-
       {!loading && tradingItemView === 1 && localStorage.getItem("workerId") <= 2 && (
         <div className="flex flex-col gap-4 w-[90svw] mx-auto">
           <div className="flex justify-center items-center m-2">
@@ -955,7 +1188,12 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                       if (longPressedItemId === String(item.id)) {
                         return;
                       }
-                      handleAdd(item);
+                      if (item.hasVariants) {
+                        setSelectedItem(item);
+                        setShowVariantModal(true);
+                      } else {
+                        handleAdd(item);
+                      }
                     }}
                     onMouseDown={(e) => startLongPress(item.id, e)}
                     onMouseUp={(e) => cancelLongPress(e)}
@@ -963,14 +1201,14 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                     animate={
                       focusedItem === item.id
                         ? {
-                          y: [-10, 0, -5, 0],
-                          transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
-                        }
+                            y: [-10, 0, -5, 0],
+                            transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                          }
                         : isLongPressActive && longPressItemId === String(item.id)
                           ? {
-                            x: [-5, 5, -5, 5, 0],
-                            transition: { duration: 0.3, repeat: 1 },
-                          }
+                              x: [-5, 5, -5, 5, 0],
+                              transition: { duration: 0.3, repeat: 1 },
+                            }
                           : {}
                     }
                   >
@@ -994,7 +1232,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                         {formatCurrency(item.price)}
                       </p>
                     )}
-                    {cartQtyMap[item.id] > 0 && (
+                    {cartQtyByName[item.name] > 0 && (
                       <motion.span
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs pointer-events-none"
                         initial={{ scale: 0 }}
@@ -1002,7 +1240,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                         exit={{ scale: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        {cartQtyMap[item.id]}
+                        {cartQtyByName[item.name]}
                       </motion.span>
                     )}
                   </motion.div>
