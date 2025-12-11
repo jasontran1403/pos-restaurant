@@ -747,11 +747,6 @@ const Home = () => {
                           return false;
                         }
 
-                        // 🌟 2. Chỉ hiển thị "phô mai emborg" nếu workerId <= 2
-                        if (name.includes("phô mai emborg")) {
-                          return workerId <= 2;
-                        }
-
                         // 🌟 3. Ẩn các món cố định
                         if (
                           name === "double cheeseburger" ||
@@ -759,6 +754,7 @@ const Home = () => {
                           name === "burger nhân tôm" ||
                           name === "salads mix nhỏ" ||
                           name.includes("- 500gr") ||
+                          name === "phô mai emborg" ||
                           item.id === 47000
                         ) {
                           return false;

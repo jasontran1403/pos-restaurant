@@ -574,17 +574,13 @@ const CompleteOrder = () => {
                           const workerId = Number(localStorage.getItem("workerId"));
                           const name = item.name.trim();
 
-                          // Nếu là Phô mai Emborg → chỉ hiển thị khi workerId <= 2
-                          if (name.toLowerCase().includes("phô mai emborg")) {
-                            return workerId <= 2;
-                          }
                           if (name.toLowerCase().includes("german hotdogs") && workerId == 10) {
                             return false;
                           }
 
                           // Các món khác → áp dụng bộ lọc chung
                           return (
-                            !["Double Chickenburger", "Double Cheeseburger", "Burger nhân tôm", "Salads mix nhỏ"].includes(name) &&
+                            !["Double Chickenburger", "Double Cheeseburger", "Burger nhân tôm", "Salads mix nhỏ", "Phô mai Emborg"].includes(name) &&
                             !name.includes("- 500gr") && item.id !== 47000
                           );
                         })

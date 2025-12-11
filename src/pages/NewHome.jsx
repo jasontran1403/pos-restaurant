@@ -688,6 +688,7 @@ const NewHome = () => {
                           !name.includes("combo") &&
                           name !== "double cheeseburger" &&
                           name !== "double chickenburger" &&
+                          name !== "phô mai emborg" &&
                           !name.includes("- 500gr")
                         );
                       })
