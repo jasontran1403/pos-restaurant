@@ -84,7 +84,6 @@ export default function AppMenu({ show, onClose }) {
                             "Salads mix nhỏ",
                             "Nhân burger Tôm",
                             "Beef Snail sausages",
-                            "Khoai Thuỵ Sĩ",
                             "Khoai Thụy Sĩ",
                             "Đạo xúc xích",
                             "Burger nhân tôm",
