@@ -8,8 +8,6 @@ export const API_ENDPOINT = "https://www.original-taste.vn/api/v1/";
 export const FILE_ENDPOINT = "https://ghoul-helpful-salmon.ngrok-free.app";
 export const WS_ENDPOINT = "wss://ghoul-helpful-salmon.ngrok-free.app/ws/price";
 
-// asdasd
-
 export const users = [
   {
     name: 'Jane Cooper 1',

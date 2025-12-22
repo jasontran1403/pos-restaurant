@@ -659,7 +659,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
   const sausages = [
     "Cheddar Cheese Sausages",
     "Garlic Sausages",
-    "Spicy Italian"
+    "Thueringer"
   ];
 
   // Hardcoded burger options
