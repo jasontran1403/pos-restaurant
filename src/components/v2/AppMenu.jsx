@@ -343,6 +343,7 @@ export default function AppMenu({ show, onClose }) {
                         >
                             {filteredItems
                                 .filter(item => !item.name.includes(" - 500gr"))
+                                .filter(item => !item.name.includes(" - 300gr"))
                                 .map((item) => {
                                     const qty = quantityByName[item.name] || 0;
                                     const isActive = qty > 0;

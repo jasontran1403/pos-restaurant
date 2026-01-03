@@ -754,6 +754,7 @@ const Home = () => {
                           name === "burger nhân tôm" ||
                           name === "salads mix nhỏ" ||
                           name.includes("- 500gr") ||
+                          name.includes("- 300gr") ||
                           name === "phô mai emborg" ||
                           item.id === 47000
                         ) {
@@ -944,7 +945,8 @@ const Home = () => {
                         return (
                           name !== "double cheeseburger" &&
                           name !== "double chickenburger" &&
-                          !name.includes("- 500gr")
+                          !name.includes("- 500gr") && 
+                          !name.includes("- 300gr")
                         );
                       })
                       .map((item) => (
@@ -1120,6 +1122,7 @@ const Home = () => {
                           name !== "double cheeseburger" &&
                           name !== "double chickenburger" &&
                           !name.includes("- 500gr") &&
+                          !name.includes("- 300gr") &&
                           name !== "burger nhân tôm" &&
                           name !== "salads mix nhỏ" &&
                           item.id !== 47000
