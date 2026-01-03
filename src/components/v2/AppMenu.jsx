@@ -21,7 +21,7 @@ export default function AppMenu({ show, onClose }) {
     const [sausageCounts, setSausageCounts] = useState([0, 0, 0]);
 
     // Hardcoded options
-    const sausages = ["Cheddar Cheese Sausages", "Garlic Sausages", "Spicy Italian"];
+    const sausages = ["Cheddar Cheese Sausages", "Garlic Sausages", "Thueringer"];
     const burgers = ["Hamburger", "Chicken Burger"];
 
     const handleSaveOrder = async (platform) => {
