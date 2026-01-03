@@ -1081,9 +1081,13 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
               <div className="grid grid-cols-3 gap-4">
                 {filteredMenu.filter(item => !item.name.includes("Nhân burger Tôm") &&
                   !item.name.includes("Khoai Thụy Sĩ") &&
-                  !item.name.includes("Beef Onion - 300gr") &&
                   !item.name.includes("Beef Snail sausages") &&
                   !item.name.includes("Phô mai Emborg") &&
+                  !item.name.includes("Krakauer") &&
+                  !item.name.includes("Beef Bratwurst") &&
+                  !item.name.includes("Cheese Bratwurst") &&
+                  !item.name.includes("Franfurter") &&
+                  !item.name.includes("Beef Onion") &&
                   item.menuType.includes("Normal")).map((item) => (
                     <motion.div
                       key={item.id}
