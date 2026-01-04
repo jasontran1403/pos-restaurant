@@ -1078,7 +1078,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
               animate={controls}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-1">
                 {filteredMenu.filter(item => !item.name.includes("Nhân burger Tôm") &&
                   !item.name.includes("Khoai Thụy Sĩ") &&
                   !item.name.includes("Beef Snail sausages") &&
@@ -1091,10 +1091,10 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                   item.menuType.includes("Normal")).map((item) => (
                     <motion.div
                       key={item.id}
-                      ref={(el) => (itemRefs.current[item.id] = el)} // Attach ref to each item
+                      ref={(el) => (itemRefs.current[item.id] = el)}
                       className={`cursor-pointer relative no-select ${isLongPressActive && longPressItemId === String(item.id) ? "border-2 border-red-500" : ""}`}
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevent click event bubbling
+                        e.stopPropagation();
                         if (longPressedItemId === String(item.id)) {
                           return;
                         }
@@ -1111,22 +1111,22 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                       animate={
                         focusedItem === item.id
                           ? {
-                              y: [-10, 0, -5, 0],
-                              transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
-                            }
+                            y: [-10, 0, -5, 0],
+                            transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                          }
                           : isLongPressActive && longPressItemId === String(item.id)
                             ? {
-                                x: [-5, 5, -5, 5, 0],
-                                transition: { duration: 0.3, repeat: 1 },
-                              }
+                              x: [-5, 5, -5, 5, 0],
+                              transition: { duration: 0.3, repeat: 1 },
+                            }
                             : {}
                       }
                     >
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-full h-[80px] object-cover rounded-lg pointer-events-none"
-                        draggable={false} // Prevent image dragging
+                        className="w-full h-[80px] sm:max-w-[90%] sm:h-[120px] sm:mx-auto object-cover rounded-lg pointer-events-none"
+                        draggable={false}
                       />
                       <p className="text-center text-white text-[10px] font-bold pointer-events-none">
                         {item.name}
@@ -1206,14 +1206,14 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                     animate={
                       focusedItem === item.id
                         ? {
-                            y: [-10, 0, -5, 0],
-                            transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
-                          }
+                          y: [-10, 0, -5, 0],
+                          transition: { duration: 0.5, times: [0, 0.3, 0.6, 1] },
+                        }
                         : isLongPressActive && longPressItemId === String(item.id)
                           ? {
-                              x: [-5, 5, -5, 5, 0],
-                              transition: { duration: 0.3, repeat: 1 },
-                            }
+                            x: [-5, 5, -5, 5, 0],
+                            transition: { duration: 0.3, repeat: 1 },
+                          }
                           : {}
                     }
                   >
