@@ -578,6 +578,10 @@ const CompleteOrder = () => {
                             return false;
                           }
 
+                          if (item.id == 60000 && workerId == 2) {
+                            return false;
+                          }
+
                           // Các món khác → áp dụng bộ lọc chung
                           return (
                             !["Double Chickenburger", "Double Cheeseburger", "Burger nhân tôm", "Salads mix nhỏ", "Phô mai Emborg"].includes(name) &&

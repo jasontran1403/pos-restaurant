@@ -756,7 +756,7 @@ const Home = () => {
                           name.includes("- 500gr") ||
                           name.includes("- 300gr") ||
                           name === "phô mai emborg" ||
-                          item.id === 47000
+                          item.id === 47000 || item.id === 60000
                         ) {
                           return false;
                         }
@@ -1125,7 +1125,7 @@ const Home = () => {
                           !name.includes("- 300gr") &&
                           name !== "burger nhân tôm" &&
                           name !== "salads mix nhỏ" &&
-                          item.id !== 47000
+                          item.id !== 47000 && item.id !== 60000
                         );
                       })
                       .map((item) => {
