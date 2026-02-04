@@ -121,6 +121,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
     })
       .then((res) => {
         // Filter out items marked as ingredients
+        
         const filteredMenu = res.data.filter((item) => ((item.price !== 0) && item.name !== "Bánh mỳ ổ" && item.name !== "Bánh mỳ hotdogs" && item.name !== "Bánh mỳ hamburger"));
         setMenu(filteredMenu);
       })
@@ -1078,15 +1079,11 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
               animate={controls}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-1">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-2">
                 {filteredMenu.filter(item => !item.name.includes("Nhân burger Tôm") &&
                   !item.name.includes("Khoai Thụy Sĩ") &&
                   !item.name.includes("Beef Snail sausages") &&
                   !item.name.includes("Phô mai Emborg") &&
-                  !item.name.includes("Krakauer") &&
-                  !item.name.includes("Beef Bratwurst") &&
-                  !item.name.includes("Cheese Bratwurst") &&
-                  !item.name.includes("Franfurter") &&
                   item.menuType.includes("Normal")).map((item) => (
                     <motion.div
                       key={item.id}
@@ -1124,10 +1121,10 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                       <img
                         src={item.image}
                         alt={item.name}
-                        className="w-full h-[80px] sm:max-w-[90%] sm:h-[120px] sm:mx-auto object-cover rounded-lg pointer-events-none"
+                        className="w-full h-[80px] sm:max-w-[90%] sm:h-[140px] sm:mx-auto object-cover sm:object-fit rounded-lg pointer-events-none"
                         draggable={false}
                       />
-                      <p className="text-center text-white text-[10px] font-bold pointer-events-none">
+                      <p className="text-center text-white mt-[10px] text-[10px] font-bold pointer-events-none">
                         {item.name}
                       </p>
                       {item.type > 0 && item.type <= 100 ? (
@@ -1219,7 +1216,7 @@ const Dashboard = ({ tradingItemView, enableShift, resetNav }) => {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-[80px] object-cover rounded-lg pointer-events-none"
+                      className="w-full h-[100px] object-cover rounded-lg pointer-events-none"
                       draggable={false} // Prevent image dragging
                     />
                     <p className="text-center text-white text-[10px] font-bold pointer-events-none">
